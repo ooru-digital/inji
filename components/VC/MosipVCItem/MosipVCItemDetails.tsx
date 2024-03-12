@@ -1,13 +1,11 @@
-import {format, formatDistanceToNow, parse} from 'date-fns';
+import {format, parse} from 'date-fns';
 import React from 'react';
-import * as DateFnsLocale from 'date-fns/locale';
 import {useTranslation} from 'react-i18next';
 import {Dimensions, Image, ImageBackground, View} from 'react-native';
 import {Icon} from 'react-native-elements';
 import {CredentialSubject, VC} from '../../../types/VC/ExistingMosipVC/vc';
 import {Button, Column, Row, Text} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
-import {TextItem} from '../../ui/TextItem';
 import VerifiedIcon from '../../VerifiedIcon';
 import {getLocalizedField} from '../../../i18n';
 import {CREDENTIAL_REGISTRY_EDIT} from 'react-native-dotenv';
@@ -15,7 +13,6 @@ import {QrCodeOverlay} from '../../QrCodeOverlay';
 import {VCMetadata} from '../../../shared/VCMetadata';
 import {
   VcIdType,
-  VCSharingReason,
   VerifiableCredential,
   VerifiablePresentation,
 } from '../../../types/VC/EsignetMosipVC/vc';
@@ -27,6 +24,7 @@ const getIssuerLogo = (isOpenId4VCI: boolean, issuerLogo: logoType) => {
   if (isOpenId4VCI) {
     return (
       <Image
+        testID="esignetLogo"
         src={issuerLogo?.url}
         alt={issuerLogo?.alt_text}
         style={Theme.Styles.issuerLogo}
@@ -245,7 +243,7 @@ export const MosipVCItemDetails: React.FC<
                       justifyContent: 'flex-start',
                       alignItems: 'center',
                     }}>
-                    {props.vc?.isVerified && <VerifiedIcon />}
+                    {props.vc && <VerifiedIcon />}
                     <Text
                       testID="valid"
                       style={{maxWidth: 80}}
@@ -352,28 +350,6 @@ export const MosipVCItemDetails: React.FC<
           )}
         </Column>
       </ImageBackground>
-
-      {props.vc?.reason?.length > 0 && (
-        <Text
-          testID="reasonForSharingTitle"
-          margin="24 24 16 24"
-          weight="semibold">
-          {t('reasonForSharing')}
-        </Text>
-      )}
-
-      {props.vc?.reason?.map((reason, index) => (
-        <TextItem
-          testID="reason"
-          key={index}
-          divider
-          label={formatDistanceToNow(reason.timestamp, {
-            addSuffix: true,
-            locale: DateFnsLocale[i18n.language],
-          })}
-          text={reason.message}
-        />
-      ))}
 
       {props.activeTab !== 1 ? (
         props.isBindingPending ? (
@@ -482,7 +458,6 @@ export interface EsignetVC {
   isVerified: boolean;
   lastVerifiedOn: number;
   locked: boolean;
-  reason?: VCSharingReason[];
   shouldVerifyPresence?: boolean;
   walletBindingResponse?: WalletBindingResponse;
   credentialRegistry: string;

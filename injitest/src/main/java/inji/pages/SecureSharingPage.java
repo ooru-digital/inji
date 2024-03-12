@@ -7,32 +7,36 @@ import org.openqa.selenium.WebElement;
 
 public class SecureSharingPage extends BasePage {
 
-    @AndroidFindBy(accessibility = "introTitle")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeStaticText[`label == \"Secure Sharing\"`]")
+    @AndroidFindBy(accessibility = "introTitle-two")
+    @iOSXCUITFindBy(accessibility = "introTitle-two")
     private WebElement secureSharingText;
 
-    @AndroidFindBy(accessibility = "introText")
-    @iOSXCUITFindBy(xpath = "//*[contains(@value,'Share your cards')]")
+    @AndroidFindBy(accessibility = "introText-two")
+    @iOSXCUITFindBy(accessibility = "introText-two")
     private WebElement secureSharingDescription;
 
     @AndroidFindBy(accessibility = "next")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeOther[`label == \"Next\"`][4]")
+    @iOSXCUITFindBy(accessibility = "next")
     private WebElement nextButton;
 
     public SecureSharingPage(AppiumDriver driver) {
         super(driver);
     }
+    BasePage basePage = new BasePage(driver);
 
-    public boolean isSecureSharingPageLoaded() {
-        return this.isElementDisplayed(secureSharingText, "Secure sharing page");
+    public String  verifyLanguageforSecureSharingPageLoaded(){
+        basePage.retrieToGetElement(secureSharingText);
+        return getTextFromLocator(secureSharingText);
+
     }
 
     public String getSecureSharingDescription() {
+        basePage.retrieToGetElement(secureSharingDescription);
         return this.getTextFromLocator(secureSharingDescription);
     }
 
-    public AppUnlockMethodPage clickOnNextButton() {
+    public void clickOnNextButton() {
         this.clickOnElement(nextButton);
-        return new AppUnlockMethodPage(driver);
+        new AppUnlockMethodPage(driver);
     }
 }

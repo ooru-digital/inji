@@ -12,6 +12,11 @@ import {
   selectShowWalletBindingError,
   selectWalletBindingSuccess,
   selectBindingAuthFailedError,
+  selectAcceptingBindingOtp,
+  selectWalletBindingInProgress,
+  selectBindingWarning,
+  selectIsPhoneNumber,
+  selectIsEmail,
 } from '../../machines/VCItemMachine/commonSelectors';
 import {
   selectIsAcceptingOtpInput,
@@ -23,9 +28,6 @@ import {
   ExistingMosipVCItemEvents,
   ExistingMosipVCItemMachine,
   selectRequestBindingOtp,
-  selectAcceptingBindingOtp,
-  selectWalletBindingInProgress,
-  selectBindingWarning,
 } from '../../machines/VCItemMachine/ExistingMosipVCItem/ExistingMosipVCItemMachine';
 import {selectPasscode} from '../../machines/auth';
 import {biometricsMachine, selectIsSuccess} from '../../machines/biometrics';
@@ -143,6 +145,8 @@ export function useViewVcModal({
     isBindingError: useSelector(vcItemActor, selectShowWalletBindingError),
     isBindingSuccess: useSelector(vcItemActor, selectWalletBindingSuccess),
     isBindingWarning: useSelector(vcItemActor, selectBindingWarning),
+    isPhoneNumber: useSelector(vcItemActor, selectIsPhoneNumber),
+    isEmail: useSelector(vcItemActor, selectIsEmail),
 
     CONFIRM_REVOKE_VC: () => {
       setRevoking(true);

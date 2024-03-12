@@ -1,13 +1,12 @@
 package iosTestCases;
 
-import BaseTest.AndroidBaseTest;
 import BaseTest.IosBaseTest;
 import inji.constants.Target;
 import inji.pages.*;
 import inji.utils.TestDataReader;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class VerifyHelpPageTest extends IosBaseTest {
@@ -30,15 +29,13 @@ public class VerifyHelpPageTest extends IosBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.IOS);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.IOS);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.IOS);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
         HelpPage helpPage = homePage.clickOnHelpIcon();
-        
-        assertEquals(helpPage.ishelpPageContentEmpty(),false,"verifying text is not empty");
-        helpPage.scrollPerformInHelpPage();
 
-        assertTrue(helpPage.isHelpPageLoaded(), "Verify if help page is displayed");
+        assertFalse(helpPage.isHelpPageContentEmpty(), "verifying if help page is not empty");
+
         helpPage.exitHelpPage();
 
         

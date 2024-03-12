@@ -7,27 +7,30 @@ import org.openqa.selenium.WebElement;
 
 public class TrustedDigitalWalletPage extends BasePage {
 
-    @AndroidFindBy(accessibility = "introTitle")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeStaticText[`label == \"Trusted Digital Wallet\"`]")
+    @AndroidFindBy(accessibility = "introTitle-three")
+    @iOSXCUITFindBy(accessibility = "introTitle-three")
     private WebElement trustedDigitalWalletText;
 
-    @AndroidFindBy(accessibility = "introText")
-    @iOSXCUITFindBy(xpath = "//*[contains(@value,'Store and carry')]")
+    @AndroidFindBy(accessibility = "introText-three")
+    @iOSXCUITFindBy(accessibility = "introText-three")
     private WebElement trustedDigitalWalletDescription;
 
     @AndroidFindBy(accessibility = "next")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeOther[`label == \"Next\"`][4]")
+    @iOSXCUITFindBy(accessibility = "next")
     private WebElement nextButton;
 
     public TrustedDigitalWalletPage(AppiumDriver driver) {
         super(driver);
     }
-
-    public boolean isTrustedDigitalWalletPageLoaded() {
-        return this.isElementDisplayed(trustedDigitalWalletText, "Trusted digital wallet page");
+    BasePage basePage = new BasePage(driver);
+    
+    public String  verifyLanguageforTrustedDigitalWalletPageLoaded(){
+    	basePage.retrieToGetElement(trustedDigitalWalletText);
+     	return getTextFromLocator(trustedDigitalWalletText);
     }
 
     public String getTrustedDigitalWalletDescription() {
+    	basePage.retrieToGetElement(trustedDigitalWalletDescription);
         return this.getTextFromLocator(trustedDigitalWalletDescription);
     }
 

@@ -4,36 +4,42 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.WebElement;
+import org.testng.Assert;
 
 public class WelcomePage extends BasePage {
 
-    @AndroidFindBy(accessibility = "introTitle")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeStaticText[`label == \"Welcome!\"`]")
+    @AndroidFindBy(accessibility = "introTitle-one")
+    @iOSXCUITFindBy(accessibility = "introTitle-one")
     private WebElement welcomeText;
 
-    @AndroidFindBy(accessibility = "introText")
-    @iOSXCUITFindBy(xpath = "//*[contains(@value,'Keep your digital')]")
+    @AndroidFindBy(accessibility = "introText-one")
+    @iOSXCUITFindBy(accessibility = "introText-one")
     private WebElement welcomeTextDescription;
 
-    @AndroidFindBy(accessibility = "skip")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeButton[`label == \"Skip\"`][1]")
+    @AndroidFindBy(accessibility = "skipButton-one")
+    @iOSXCUITFindBy(accessibility = "skipButton-one")
     private WebElement skipButton;
 
     @AndroidFindBy(accessibility = "next")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeOther[`label == \"Next\"`][4]")
+    @iOSXCUITFindBy(accessibility = "next")
     private WebElement nextButton;
-    
-    @AndroidFindBy(uiAutomator = "new UiSelector().textContains(\"Back\")")
-    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeButton[`label == \"Back\"`][1]")
-    public WebElement backButton;
 
+    @AndroidFindBy(accessibility = "backButton-one")
+    @iOSXCUITFindBy(accessibility = "backButton-one")
+    public WebElement backButton;
 
     public WelcomePage(AppiumDriver driver) {
         super(driver);
     }
+    BasePage basePage = new BasePage(driver);
+
+    public String  verifyLanguageforWelcomePageLoaded(){
+        return getTextFromLocator(welcomeText);
+    }
 
     public boolean isWelcomePageLoaded() {
-        return this.isElementDisplayed(welcomeText, "Welcome page");
+        basePage.retrieToGetElement(welcomeText);
+        return this.isElementDisplayed(welcomeText);
     }
 
     public AppUnlockMethodPage clickOnSkipButton() {
@@ -41,16 +47,17 @@ public class WelcomePage extends BasePage {
         return new AppUnlockMethodPage(driver);
     }
 
-    public AppUnlockMethodPage clickOnNextButton() {
+    public void clickOnNextButton() {
         this.clickOnElement(nextButton);
-        return new AppUnlockMethodPage(driver);
+        new AppUnlockMethodPage(driver);
     }
 
     public String getWelcomeDescription() {
+        basePage.retrieToGetElement(welcomeTextDescription);
         return this.getTextFromLocator(welcomeTextDescription);
     }
 
     public void clickOnBackButton() {
-    	this.clickOnElement(backButton);
+        this.clickOnElement(backButton);
     }
 }

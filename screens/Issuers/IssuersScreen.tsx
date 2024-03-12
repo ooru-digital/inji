@@ -1,16 +1,16 @@
 import React, {useLayoutEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {FlatList, Image, Pressable, View} from 'react-native';
+import {FlatList, Pressable, View} from 'react-native';
 import {Issuer} from '../../components/openId4VCI/Issuer';
 import {Error} from '../../components/ui/Error';
 import {Header} from '../../components/ui/Header';
 import {Button, Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {RootRouteProps} from '../../routes';
-import {HomeRouteProps} from '../../routes/main';
+import {HomeRouteProps} from '../../routes/routeTypes';
 import {useIssuerScreenController} from './IssuerScreenController';
 import {Loader} from '../../components/ui/Loader';
-import testIDProps, {removeWhiteSpace} from '../../shared/commonUtil';
+import {removeWhiteSpace} from '../../shared/commonUtil';
 import {
   ErrorMessage,
   getDisplayObjectForCurrentLanguage,
@@ -27,6 +27,7 @@ import {MessageOverlay} from '../../components/MessageOverlay';
 import {SearchBar} from '../../components/ui/SearchBar';
 import {SvgImage} from '../../components/ui/svg';
 import {Icon} from 'react-native-elements';
+import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 
 export const IssuersScreen: React.FC<
   HomeRouteProps | RootRouteProps
@@ -39,6 +40,12 @@ export const IssuersScreen: React.FC<
   const [search, setSearch] = useState('');
   const [tapToSearch, setTapToSearch] = useState(false);
   const [clearSearchIcon, setClearSearchIcon] = useState(false);
+
+  const isVerificationFailed = controller.verificationErrorMessage !== '';
+
+  const verificationErrorMessage = t(
+    `MyVcsTab:errors.verificationFailed.${controller.verificationErrorMessage}`,
+  );
 
   useLayoutEffect(() => {
     if (controller.loadingReason || controller.errorMessageType) {
@@ -133,11 +140,30 @@ export const IssuersScreen: React.FC<
     }
   };
 
+  if (isVerificationFailed) {
+    return (
+      <Error
+        testID="verificationError"
+        isVisible={isVerificationFailed}
+        isModal={true}
+        alignActionsOnEnd
+        title={t('MyVcsTab:errors.verificationFailed.title')}
+        message={verificationErrorMessage}
+        image={SvgImage.PermissionDenied()}
+        showClose={false}
+        primaryButtonText="goBack"
+        primaryButtonEvent={controller.RESET_VERIFY_ERROR}
+        primaryButtonTestID="goBack"
+        customStyles={{marginTop: '30%'}}
+      />
+    );
+  }
+
   if (controller.isBiometricsCancelled) {
     return (
       <MessageOverlay
         isVisible={controller.isBiometricsCancelled}
-        customHeight={'auto'}
+        minHeight={'auto'}
         title={t('errors.biometricsCancelled.title')}
         message={t('errors.biometricsCancelled.message')}
         onBackdropPress={controller.RESET_ERROR}>
@@ -170,6 +196,11 @@ export const IssuersScreen: React.FC<
         goBack={goBack}
         tryAgain={controller.TRY_AGAIN}
         image={getImage()}
+        showClose
+        primaryButtonTestID="tryAgain"
+        primaryButtonText="tryAgain"
+        primaryButtonEvent={controller.TRY_AGAIN}
+        onDismiss={goBack}
       />
     );
   }
@@ -185,6 +216,7 @@ export const IssuersScreen: React.FC<
 
   return (
     <React.Fragment>
+      <BannerNotificationContainer />
       {controller.issuers.length > 0 && (
         <Column style={Theme.IssuersScreenStyles.issuerListOuterContainer}>
           <Row
@@ -215,12 +247,10 @@ export const IssuersScreen: React.FC<
             )}
           </Row>
           <Text
-            {...testIDProps('issuersScreenDescription')}
+            testID="issuersScreenDescription"
             style={{
               ...Theme.TextStyles.regularGrey,
-              paddingTop: 0.5,
-              marginVertical: 14,
-              marginHorizontal: 9,
+              ...Theme.IssuersScreenStyles.issuersSearchSubText,
             }}>
             {t('description')}
           </Text>
@@ -241,7 +271,7 @@ export const IssuersScreen: React.FC<
                     {...props}
                   />
                 )}
-                numColumns={2}
+                numColumns={1}
                 keyExtractor={item => item.credential_issuer}
               />
             )}

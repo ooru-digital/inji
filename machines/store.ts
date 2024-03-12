@@ -1,5 +1,5 @@
 import * as Keychain from 'react-native-keychain';
-import Storage from '../shared/storage';
+import Storage, {MMKV} from '../shared/storage';
 import binaryToBase64 from 'react-native/Libraries/Utilities/binaryToBase64';
 import {
   EventFrom,
@@ -12,7 +12,13 @@ import {
 import {createModel} from 'xstate/lib/model';
 import {generateSecureRandom} from 'react-native-securerandom';
 import {log} from 'xstate/lib/actions';
-import {isIOS, MY_VCS_STORE_KEY, SETTINGS_STORE_KEY} from '../shared/constants';
+import {
+  isIOS,
+  MY_VCS_STORE_KEY,
+  RECEIVED_VCS_STORE_KEY,
+  SETTINGS_STORE_KEY,
+  ENOENT,
+} from '../shared/constants';
 import SecureKeystore from '@mosip/secure-keystore';
 import {
   AUTH_TIMEOUT,
@@ -31,11 +37,11 @@ import {
   getErrorEventData,
 } from '../shared/telemetry/TelemetryUtils';
 import RNSecureKeyStore from 'react-native-secure-key-store';
+import {Buffer} from 'buffer';
 
 export const keyinvalidatedString =
   'Key Invalidated due to biometric enrollment';
 export const tamperedErrorMessageString = 'Data is tampered';
-export const ENOENT = 'No such file or directory';
 
 const model = createModel(
   {
@@ -48,6 +54,8 @@ const model = createModel(
       TRY_AGAIN: () => ({}),
       IGNORE: () => ({}),
       GET: (key: string) => ({key}),
+      EXPORT: () => ({}),
+      RESTORE_BACKUP: (data: {}) => ({data}),
       DECRYPT_ERROR: () => ({}),
       KEY_INVALIDATE_ERROR: () => ({}),
       BIOMETRIC_CANCELLED: (requester?: string) => ({requester}),
@@ -189,6 +197,12 @@ export const storeMachine =
             GET: {
               actions: 'forwardStoreRequest',
             },
+            EXPORT: {
+              actions: 'forwardStoreRequest',
+            },
+            RESTORE_BACKUP: {
+              actions: 'forwardStoreRequest',
+            },
             SET: {
               actions: 'forwardStoreRequest',
             },
@@ -285,9 +299,11 @@ export const storeMachine =
           const hasSetCredentials = SecureKeystore.hasAlias(ENCRYPTION_ID);
           if (hasSetCredentials) {
             try {
+              const base64EncodedString =
+                Buffer.from('Dummy').toString('base64');
               await SecureKeystore.encryptData(
                 DUMMY_KEY_FOR_BIOMETRIC_ALIAS,
-                'Dummy',
+                base64EncodedString,
               );
             } catch (e) {
               sendErrorEvent(getErrorEventData('ENCRYPTION', '', e));
@@ -341,6 +357,18 @@ export const storeMachine =
                   response = await getItem(
                     event.key,
                     null,
+                    context.encryptionKey,
+                  );
+                  break;
+                }
+                case 'EXPORT': {
+                  response = await exportData(context.encryptionKey);
+                  break;
+                }
+                case 'RESTORE_BACKUP': {
+                  // the backup data is in plain text
+                  response = await loadBackupData(
+                    event.data,
                     context.encryptionKey,
                   );
                   break;
@@ -443,7 +471,9 @@ export const storeMachine =
                 callback(model.events.BIOMETRIC_CANCELLED(event.requester));
                 sendUpdate();
               } else {
-                console.error(e);
+                console.error(
+                  `Error while performing the operation ${event.type} with storage - ${e}`,
+                );
                 callback(model.events.STORE_ERROR(e, event.requester));
               }
             }
@@ -547,6 +577,14 @@ export async function setItem(
   }
 }
 
+export async function exportData(encryptionKey: string) {
+  return Storage.exportData(encryptionKey);
+}
+
+export async function loadBackupData(data, encryptionKey) {
+  await Storage.loadBackupData(data, encryptionKey);
+}
+
 export async function getItem(
   key: string,
   defaultValue: unknown,
@@ -581,13 +619,27 @@ export async function getItem(
       );
       throw new Error(tamperedErrorMessageString);
     } else {
+      console.debug(
+        `While getting item - ${key} from storage: data value is ${data} so returning the default value`,
+      );
       return defaultValue;
     }
   } catch (e) {
+    console.error(`Exception in getting item for ${key}: ${e}`);
+    if (e.message === ENOENT) {
+      removeTamperedVcMetaData(key, encryptionKey);
+      sendErrorEvent(
+        getErrorEventData(
+          TelemetryConstants.FlowType.fetchData,
+          TelemetryConstants.ErrorId.tampered,
+          e.message,
+        ),
+      );
+      throw e;
+    }
     if (
       e.message.includes(tamperedErrorMessageString) ||
       e.message.includes(keyinvalidatedString) ||
-      e.message === ENOENT ||
       e instanceof BiometricCancellationError ||
       e.message.includes('Key not found') // this error happens when previous get Item calls failed due to key invalidation and data and keys are deleted
     ) {
@@ -607,7 +659,6 @@ export async function getItem(
         `Exception in getting item for ${key}: ${e}`,
       ),
     );
-    console.error(`Exception in getting item for ${key}: ${e}`);
     return defaultValue;
   }
 }
@@ -678,7 +729,7 @@ export async function removeItem(
   try {
     if (value === null && VCMetadata.isVCKey(key)) {
       await Storage.removeItem(key);
-      await removeVCMetaData(MY_VCS_STORE_KEY, key, encryptionKey);
+      removeTamperedVcMetaData(key, encryptionKey);
     } else if (key === MY_VCS_STORE_KEY) {
       const data = await Storage.getItem(key, encryptionKey);
       let list: Object[] = [];
@@ -694,9 +745,17 @@ export async function removeItem(
 
       await setItem(key, newList, encryptionKey);
       await Storage.removeItem(value);
+      await MMKV.removeItem(value);
     }
   } catch (e) {
     console.error('error removeItem:', e);
+    sendErrorEvent(
+      getErrorEventData(
+        TelemetryConstants.FlowType.remove,
+        TelemetryConstants.ErrorId.failure,
+        e.message,
+      ),
+    );
     throw e;
   }
 }
@@ -722,6 +781,52 @@ export async function removeVCMetaData(
     await setItem(key, newList, encryptionKey);
   } catch (e) {
     console.error('error remove VC metadata:', e);
+    sendErrorEvent(
+      getErrorEventData(
+        TelemetryConstants.FlowType.removeVcMetadata,
+        TelemetryConstants.ErrorId.failure,
+        e.message,
+      ),
+    );
+    throw e;
+  }
+}
+
+export async function removeTamperedVcMetaData(
+  key: string,
+  encryptionKey: string,
+) {
+  try {
+    const myVcsMetadata = await Storage.getItem(
+      MY_VCS_STORE_KEY,
+      encryptionKey,
+    );
+    let myVcsDecryptedMetadata: Object[] = [];
+
+    if (myVcsMetadata != null) {
+      const decryptedData = await decryptJson(encryptionKey, myVcsMetadata);
+      myVcsDecryptedMetadata = JSON.parse(decryptedData) as Object[];
+    }
+
+    const isTamperedVcInMyVCs = myVcsDecryptedMetadata?.filter(
+      (vcMetadataObject: Object) => {
+        return new VCMetadata(vcMetadataObject).getVcKey() === key;
+      },
+    ).length;
+    if (isTamperedVcInMyVCs) {
+      await removeVCMetaData(MY_VCS_STORE_KEY, key, encryptionKey);
+    } else {
+      await removeVCMetaData(RECEIVED_VCS_STORE_KEY, key, encryptionKey);
+    }
+  } catch (e) {
+    console.error('error while removing VC item metadata:', e);
+    sendErrorEvent(
+      getErrorEventData(
+        TelemetryConstants.FlowType.remove,
+        TelemetryConstants.ErrorId.tampered,
+        e.message,
+      ),
+    );
     throw e;
   }
 }
@@ -760,6 +865,13 @@ export async function removeItems(
     await setItem(key, newList, encryptionKey);
   } catch (e) {
     console.error('error removeItems:', e);
+    sendErrorEvent(
+      getErrorEventData(
+        TelemetryConstants.FlowType.remove,
+        TelemetryConstants.ErrorId.failure,
+        e.message,
+      ),
+    );
     throw e;
   }
 }

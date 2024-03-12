@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import {Button, Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
-import {Image, RefreshControl} from 'react-native';
+import {RefreshControl} from 'react-native';
 import {useMyVcsTab} from './MyVcsTabController';
 import {HomeScreenTabProps} from './HomeScreen';
 import {AddVcModal} from './MyVcs/AddVcModal';
@@ -24,6 +24,7 @@ import {Error} from '../../components/ui/Error';
 import {useIsFocused} from '@react-navigation/native';
 import {getVCsOrderedByPinStatus} from '../../shared/Utils';
 import {SvgImage} from '../../components/ui/svg';
+import {BANNER_TYPE_SUCCESS} from '../../shared/constants';
 
 export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   const {t} = useTranslation('MyVcsTab');
@@ -80,6 +81,13 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
   controller.downloadFailedVcs.forEach(vc => {
     failedVCsList.push(`\n${vc.idType}:${vc.id}`);
   });
+
+  const isVerificationFailed = controller.verificationErrorMessage !== '';
+
+  const verificationErrorMessage = t(
+    `errors.verificationFailed.${controller.verificationErrorMessage}`,
+  );
+
   const downloadFailedVcsErrorMessage = `${t(
     'errors.downloadLimitExpires.message',
   )}${failedVCsList}`;
@@ -95,19 +103,14 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
       <Column fill style={{display: props.isVisible ? 'flex' : 'none'}}>
         {controller.isRequestSuccessful && (
           <BannerNotification
+            type={BANNER_TYPE_SUCCESS}
             message={t('downloadingYourCard')}
             onClosePress={() => {
               controller.RESET_STORE_VC_ITEM_STATUS();
               clearIndividualId();
             }}
+            key={'downloadingVcPopup'}
             testId={'downloadingVcPopup'}
-          />
-        )}
-        {controller.isBindingSuccess && (
-          <BannerNotification
-            message={t('activated')}
-            onClosePress={controller.DISMISS_WALLET_BINDING_NOTIFICATION_BANNER}
-            testId={'activatedVcPopup'}
           />
         )}
         <Column fill pY={11} pX={8}>
@@ -185,7 +188,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
         message={t('errors.keystoreNotExists.message')}
         onButtonPress={controller.ACCEPT_HARDWARE_SUPPORT_NOT_EXISTS}
         buttonText={t('errors.keystoreNotExists.riskOkayText')}
-        customHeight={'auto'}>
+        minHeight={'auto'}>
         <Row>
           <Button
             testID="ok"
@@ -214,7 +217,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
         message={t('errors.vcIsTampered.message')}
         onButtonPress={controller.REMOVE_TAMPERED_VCS}
         buttonText={t('common:ok')}
-        customHeight={'auto'}
+        minHeight={'auto'}
       />
 
       <MessageOverlay
@@ -223,19 +226,39 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
         message={downloadFailedVcsErrorMessage}
         onButtonPress={controller.DELETE_VC}
         buttonText={t('common:ok')}
-        customHeight={'auto'}
+        minHeight={'auto'}
       />
+
+      {isVerificationFailed && (
+        <Error
+          testID="verificationError"
+          isVisible={isVerificationFailed}
+          isModal={true}
+          alignActionsOnEnd
+          title={t('errors.verificationFailed.title')}
+          message={verificationErrorMessage}
+          image={SvgImage.PermissionDenied()}
+          showClose={false}
+          primaryButtonText="goBack"
+          primaryButtonEvent={controller.RESET_VERIFY_ERROR}
+          primaryButtonTestID="goBack"
+          customStyles={{marginTop: '30%'}}
+        />
+      )}
 
       {controller.isNetworkOff && (
         <Error
-          testID={`networkOffError`}
+          testID="networkOffError"
           isVisible={controller.isNetworkOff}
-          isModal={true}
+          isModal
           title={t('errors.noInternetConnection.title')}
           message={t('errors.noInternetConnection.message')}
           onDismiss={controller.DISMISS}
-          tryAgain={controller.TRY_AGAIN}
           image={SvgImage.NoInternetConnection()}
+          showClose
+          primaryButtonText="tryAgain"
+          primaryButtonEvent={controller.TRY_AGAIN}
+          primaryButtonTestID="tryAgain"
         />
       )}
     </React.Fragment>

@@ -11,11 +11,12 @@ import {Modal} from '../../components/ui/Modal';
 import {Column, Row, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {Icon, ListItem} from 'react-native-elements';
-import getAllConfigurations from '../../shared/commonprops/commonProps';
+import getAllConfigurations from '../../shared/api';
 import {CopyButton} from '../../components/CopyButton';
 import testIDProps from '../../shared/commonUtil';
 import {__InjiVersion, __TuvaliVersion} from '../../shared/GlobalVariables';
 import i18next from '../../i18n';
+import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 
 export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
   const {t} = useTranslation('AboutInji');
@@ -62,6 +63,7 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
         onDismiss={() => {
           setShowAboutInji(!showAboutInji);
         }}>
+        <BannerNotificationContainer />
         <Row
           testID="appID"
           crossAlign="flex-start"
@@ -115,6 +117,7 @@ export const AboutInji: React.FC<AboutInjiProps> = ({appId}) => {
                   aboutInjiUrl && Linking.openURL(aboutInjiUrl);
                 }}>
                 <Text
+                  testID="clickHere"
                   color={Theme.Colors.AddIdBtnBg}
                   style={{maxWidth: 150, paddingTop: 3}}
                   weight="bold">

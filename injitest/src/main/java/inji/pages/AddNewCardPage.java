@@ -7,7 +7,7 @@ import org.openqa.selenium.WebElement;
 
 public class AddNewCardPage extends BasePage{
 
-    @AndroidFindBy(accessibility = "issuersScreenHeader")
+    @AndroidFindBy(accessibility = "title")
     @iOSXCUITFindBy(accessibility = "title")
     private WebElement addNewCardHeader;
 
@@ -20,14 +20,18 @@ public class AddNewCardPage extends BasePage{
     private WebElement backButton;
     
     @AndroidFindBy(accessibility = "issuer-ESignet")
-    @iOSXCUITFindBy(accessibility = "issuerHeading-ESignet")
+    @iOSXCUITFindBy(accessibility = "issuer-ESignet")
     private WebElement downloadViaEsignet;
-    
-    @AndroidFindBy(uiAutomator = "new UiSelector().textContains(\"Please choose your preferred issuer from the options below to add a new card.\")")
+
+    @iOSXCUITFindBy(accessibility = "Continue")
+    private WebElement continueButton;
+
+    @iOSXCUITFindBy(accessibility = "Cancel")
+    private WebElement cancelButton;
+
+    @AndroidFindBy(accessibility = "issuersScreenDescription")
+    @iOSXCUITFindBy(accessibility = "issuersScreenDescription")
     private WebElement addNewCardGuideMessage;
-    
-    @AndroidFindBy(uiAutomator = "new UiSelector().textContains(\"Mangyaring piliin ang iyong gustong tagabigay mula sa mga opsyon sa ibaba upang magdagdag ng bagong card.\")")
-    private WebElement addNewCardGuideMessageInFillpino;
     
     @AndroidFindBy(accessibility = "issuerDescription-Mosip")
     @iOSXCUITFindBy(accessibility = "issuerDescription-Mosip")
@@ -40,13 +44,25 @@ public class AddNewCardPage extends BasePage{
     @AndroidFindBy(className = "android.widget.EditText")
     @iOSXCUITFindBy(accessibility = "issuerSearchBar")
     private WebElement issuerSearchBar;
+
+    @AndroidFindBy(accessibility = "issuerHeading-Sunbird")
+    @iOSXCUITFindBy(accessibility = "issuerHeading-Sunbird")
+    private WebElement downloadViaSunbird;
     
     public AddNewCardPage(AppiumDriver driver) {
         super(driver);
     }
-
+    
+    public String  verifyLanguageForAddNewCardGuideMessage(){
+    	 return getTextFromLocator(addNewCardGuideMessage);
+    }
+    
+    public boolean isAddNewCardPageGuideMessageForEsignetDisplayed() {
+        return this.isElementDisplayed(addNewCardGuideMessage);
+    }
+    
     public boolean isAddNewCardPageLoaded() {
-        return this.isElementDisplayed(addNewCardHeader, "Home page");
+        return this.isElementDisplayed(addNewCardHeader);
     }
 
     public RetrieveIdPage clickOnDownloadViaUin(){
@@ -54,60 +70,88 @@ public class AddNewCardPage extends BasePage{
         return new RetrieveIdPage(driver);
     }
     
-    public AddNewCardPage clickOnBack() {
+    public void clickOnBack() {
     	clickOnElement(backButton);
-		return this;
     }
     
     public boolean isAddNewCardGuideMessageDisplayed() {
-        return this.isElementDisplayed(addNewCardGuideMessage, "Please choose your preferred issuer from the options below to add a new card.");
+        return this.isElementDisplayed(addNewCardGuideMessage);
     }
     
     public boolean isDownloadViaUinDisplayed() {
-        return this.isElementDisplayed(downloadViaUin, "Download via UIN, VID, AID");
+        return this.isElementDisplayed(downloadViaUin);
+    }
+    
+    public boolean isDownloadViaUinDisplayedInHindi() {
+        return this.isElementDisplayed(downloadViaUin);
     }
     
     public boolean isDownloadViaEsignetDisplayed() {
-        return this.isElementDisplayed(downloadViaEsignet, "Download via e-Signet");
+        return this.isElementDisplayed(downloadViaEsignet);
+    }
+    
+    public boolean isDownloadViaEsignetDisplayedInHindi() {
+        return this.isElementDisplayed(downloadViaEsignet);
     }
     
     public boolean isDownloadViaEsignetDisplayedinFillpino() {
-        return this.isElementDisplayed(downloadViaEsignet, "I-download sa pamamagitan ng e-Signet");
+        return this.isElementDisplayed(downloadViaEsignet);
     }
     
     public EsignetLoginPage clickOnDownloadViaEsignet(){
         clickOnElement(downloadViaEsignet);
         return new EsignetLoginPage(driver);
     }
+
+    public void clickOnContinueButtonInSigninPopupIos(){
+        clickOnElement(continueButton);
+    }
+
+    public void clickOnCancelButtonInSigninPopupIos(){
+        clickOnElement(cancelButton);
+    }
     
-    public boolean isBackButtonDisplayed() {
-        return backButton.isDisplayed() ;
+    public void isBackButtonDisplayed() {
+        backButton.isDisplayed();
     }
     
     public boolean isAddNewCardGuideMessageDisplayedInFillopin() {
-        return this.isElementDisplayed(addNewCardGuideMessageInFillpino, "Mangyaring piliin ang iyong gustong tagabigay mula sa mga opsyon sa ibaba upang magdagdag ng bagong card.");
+        return this.isElementDisplayed(addNewCardGuideMessage);
     }
     
+    public boolean isAddNewCardGuideMessageDisplayedInHindi() {
+        return this.isElementDisplayed(addNewCardGuideMessage);
+    }
     public boolean isIssuerDescriptionMosipDisplayed() {
-        return this.isElementDisplayed(issuerDescriptionMosip, "Enter your national ID to download your card.");
+        return this.isElementDisplayed(issuerDescriptionMosip);
     }
     
     public boolean isIssuerDescriptionEsignetDisplayed() {
-        return this.isElementDisplayed(issuerDescriptionEsignet, "Enter your national ID to download your card.");
+        return this.isElementDisplayed(issuerDescriptionEsignet);
     }
     
     public boolean isIssuerSearchBarDisplayed() {
-    	return this.isElementDisplayed(issuerSearchBar, "Search by Issuer’s name");
+    	return this.isElementDisplayed(issuerSearchBar);
     }
     
     public boolean isIssuerSearchBarDisplayedInFilipino() {
-    	return this.isElementDisplayed(issuerSearchBar, "Maghanap ayon sa pangalan ng Nag-isyu");
+    	return this.isElementDisplayed(issuerSearchBar);
     }
     
-    public AddNewCardPage IssuerSearchBar(String env) {
-    	clearTextBoxAndSendKeys(issuerSearchBar, env, "issuer search bar");
-        return this;
+    public boolean isIssuerSearchBarDisplayedInHindi() {
+    	return this.isElementDisplayed(issuerSearchBar);
+    }
+    
+    public void sendTextInIssuerSearchBar(String text) {
+    	clearTextBoxAndSendKeys(issuerSearchBar, text);
     }
 
-
+    public boolean isDownloadViaSunbirdDisplayed() {
+        return this.isElementDisplayed(downloadViaSunbird);
+    }
+    public SunbirdLoginPage clickOnDownloadViaSunbird(){
+        clickOnElement(downloadViaSunbird);
+        return new SunbirdLoginPage(driver);
+    }
 }
+

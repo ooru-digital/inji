@@ -1,6 +1,6 @@
 import {useInterpret, useSelector} from '@xstate/react';
 import {useContext, useEffect, useRef} from 'react';
-import {HomeRouteProps} from '../../routes/main';
+import {HomeRouteProps} from '../../routes/routeTypes';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {
   HomeScreenEvents,
@@ -13,7 +13,7 @@ import {
   selectIssuersMachine,
   selectIsMinimumStorageLimitReached,
 } from './HomeScreenMachine';
-import {VcEvents} from '../../machines/vc';
+import {VcEvents} from '../../machines/VCItemMachine/vc';
 
 export function useHomeScreen(props: HomeRouteProps) {
   const {appService} = useContext(GlobalContext);

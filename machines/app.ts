@@ -1,12 +1,12 @@
 import NetInfo, {NetInfoStateType} from '@react-native-community/netinfo';
-import {AppState, AppStateStatus, Platform} from 'react-native';
+import {AppState, AppStateStatus} from 'react-native';
 import {getDeviceId, getDeviceName} from 'react-native-device-info';
 import {assign, EventFrom, send, spawn, StateFrom} from 'xstate';
 import {createModel} from 'xstate/lib/model';
 import {authMachine, createAuthMachine} from './auth';
 import {createSettingsMachine, settingsMachine} from './settings';
 import {StoreEvents, storeMachine} from './store';
-import {createVcMachine, vcMachine} from './vc';
+import {createVcMachine, vcMachine} from './VCItemMachine/vc';
 import {activityLogMachine, createActivityLogMachine} from './activityLog';
 import {
   createRequestMachine,
@@ -25,6 +25,11 @@ import {
   SETTINGS_STORE_KEY,
 } from '../shared/constants';
 import {logState} from '../shared/commonUtil';
+import {backupMachine, createBackupMachine} from './backupAndRestore/backup';
+import {
+  backupRestoreMachine,
+  createBackupRestoreMachine,
+} from './backupAndRestore/backupRestore';
 
 const model = createModel(
   {
@@ -260,6 +265,16 @@ export const appMachine = model.createMachine(
             settingsMachine.id,
           );
 
+          serviceRefs.backup = spawn(
+            createBackupMachine(serviceRefs),
+            backupMachine.id,
+          );
+
+          serviceRefs.backupRestore = spawn(
+            createBackupRestoreMachine(serviceRefs),
+            backupRestoreMachine.id,
+          );
+
           serviceRefs.activityLog = spawn(
             createActivityLogMachine(serviceRefs),
             activityLogMachine.id,
@@ -293,6 +308,8 @@ export const appMachine = model.createMachine(
           context.serviceRefs.settings.subscribe(logState);
           context.serviceRefs.activityLog.subscribe(logState);
           context.serviceRefs.scan.subscribe(logState);
+          context.serviceRefs.backup.subscribe(logState);
+          context.serviceRefs.backupRestore.subscribe(logState);
 
           if (isAndroid()) {
             context.serviceRefs.request.subscribe(logState);

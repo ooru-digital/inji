@@ -1,5 +1,5 @@
 import React from 'react';
-import {I18nManager, Modal as RNModal, View} from 'react-native';
+import {I18nManager, Pressable, Modal as RNModal, View} from 'react-native';
 import {Icon} from 'react-native-elements';
 import {Column, Row, Text} from '.';
 import {useSendVcScreen} from '../../screens/Scan/SendVcScreenController';
@@ -30,24 +30,22 @@ export const Modal: React.FC<ModalProps> = props => {
               />
             ) : null}
             {props.arrowLeft ? (
-              <Icon
-                {...testIDProps('arrowLeft')}
-                name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
-                type="material-community"
-                onPress={props.onDismiss}
-                containerStyle={Theme.Styles.backArrowContainer}
-                color={Theme.Colors.Icon}
-              />
+              <Pressable onPress={props.onDismiss} accessible={false}>
+                <Icon
+                  {...testIDProps('arrowLeft')}
+                  name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
+                  type="material-community"
+                  containerStyle={Theme.Styles.backArrowContainer}
+                  color={Theme.Colors.Icon}
+                />
+              </Pressable>
             ) : null}
             <Row
               fill
               align={props.headerLeft ? 'flex-start' : 'center'}
-              margin={'16 0 0 0'}>
+              margin={props.arrowLeft ? '16 0 0 -15' : '16 0 0 10'}>
               <Column>
-                <Text
-                  testID={props.testID}
-                  style={Theme.TextStyles.header}
-                  margin="0 0 0 -15">
+                <Text testID={props.testID} style={Theme.TextStyles.header}>
                   {props.headerTitle || props.headerLeft}
                 </Text>
                 {!props.requester ? (
@@ -110,4 +108,5 @@ export interface ModalProps {
   headerLeft?: React.ReactElement;
   arrowLeft?: boolean;
   onShow?: () => void;
+  children: React.ReactNode;
 }

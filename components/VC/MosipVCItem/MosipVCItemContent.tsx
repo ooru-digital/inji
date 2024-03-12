@@ -7,9 +7,10 @@ import VerifiedIcon from '../../VerifiedIcon';
 import {Column, Row, Text} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
 import {CheckBox, Icon} from 'react-native-elements';
-import {getMaskedText} from '../../../shared/commonUtil';
+import testIDProps, {getMaskedText} from '../../../shared/commonUtil';
 import {logoType} from '../../../machines/issuersMachine';
 import {SvgImage} from '../../ui/svg';
+import {VcItemContainerProfileImage} from '../../VcItemContainerProfileImage';
 
 const getDetails = (arg1, arg2, verifiableCredential) => {
   if (arg1 === 'Status') {
@@ -89,6 +90,7 @@ const getIssuerLogo = (isOpenId4VCI: boolean, issuerLogo: logoType) => {
   if (isOpenId4VCI) {
     return (
       <Image
+        {...testIDProps('esignetLogo')}
         src={issuerLogo?.url}
         alt={issuerLogo?.alt_text}
         style={Theme.Styles.issuerLogo}
@@ -169,7 +171,7 @@ export const MosipVCItemContent: React.FC<
       <Column>
         <Row align="space-between">
           <Row margin="5 0 0 5">
-            {SvgImage.VcItemContainerProfileImage(props, verifiableCredential)}
+            {VcItemContainerProfileImage(props, verifiableCredential)}
 
             <Column margin="0 0 10 55" height={96} align="space-between">
               <Column style={{maxWidth: 230}}>

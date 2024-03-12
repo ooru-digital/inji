@@ -7,9 +7,8 @@ import inji.pages.*;
 import inji.utils.TestDataReader;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-
-import static org.testng.Assert.*;
 
 public class VerifyHistoryTest extends AndroidBaseTest {
     @Test
@@ -29,7 +28,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -38,7 +37,8 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         RetrieveIdPage retrieveIdPage = addNewCardPage.clickOnDownloadViaUin();
 
         assertTrue(retrieveIdPage.isRetrieveIdPageLoaded(), "Verify if retrieve id page is displayed");
-        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(TestDataReader.readData("uin")).clickOnGenerateCardButton();
+        String uin = TestDataReader.readData("uin");
+        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(uin).clickOnGenerateCardButton();
 
         assertTrue(otpVerification.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.ANDROID);
@@ -47,7 +47,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         HistoryPage historyPage = homePage.clickOnHistoryButton();
 
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyHistory(TestDataReader.readData("uin"), Target.ANDROID));
+        assertTrue(historyPage.verifyHistory(uin, Target.ANDROID));
 
     }
 
@@ -68,7 +68,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
 
@@ -78,7 +78,8 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         RetrieveIdPage retrieveIdPage = addNewCardPage.clickOnDownloadViaUin();
 
         assertTrue(retrieveIdPage.isRetrieveIdPageLoaded(), "Verify if retrieve id page is displayed");
-        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(TestDataReader.readData("uin")).clickOnGenerateCardButton();
+        String uin = TestDataReader.readData("uin");
+        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(uin).clickOnGenerateCardButton();
 
         assertTrue(otpVerification.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.ANDROID);
@@ -95,12 +96,15 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(otpVerificationPage.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerificationPage.enterOtp(TestDataReader.readData("invalidOtp"), Target.ANDROID);
 
+        assertTrue(otpVerification.invalidOtpMessageDisplayed(), "Verify if OTP is invalid message is displayed");
+        otpVerificationPage.enterOtp(TestDataReader.readData("invalidOtp"), Target.ANDROID);
+        
         assertTrue(otpVerificationPage.somethingWetWrongInVcActivationDisplayed(), "Verify if Something is wrong. Please try again later displayed");
         assertTrue(otpVerificationPage.isCancelButtonDisplayed(), "Verify if cancel button is displayed");
 
         HistoryPage historyPage = otpVerificationPage.clickOnCancelButton().clickOnCloseButton().clickOnHistoryButton();
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyActivationFailedRecordInHistory(TestDataReader.readData("uin"), Target.ANDROID));
+        assertTrue(historyPage.verifyActivationFailedRecordInHistory(uin, Target.ANDROID));
     }
 
     @Test
@@ -120,7 +124,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
 
@@ -130,7 +134,8 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         RetrieveIdPage retrieveIdPage = addNewCardPage.clickOnDownloadViaUin();
 
         assertTrue(retrieveIdPage.isRetrieveIdPageLoaded(), "Verify if retrieve id page is displayed");
-        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(TestDataReader.readData("uin")).clickOnGenerateCardButton();
+        String uin = TestDataReader.readData("uin");
+        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(uin).clickOnGenerateCardButton();
 
         assertTrue(otpVerification.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.ANDROID);
@@ -138,7 +143,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(homePage.isNameDisplayed(TestDataReader.readData("fullName")), "Verify if full name is displayed");
         DetailedVcViewPage detailedVcViewPage = homePage.openDetailedVcView(TestDataReader.readData("fullName"));
         assertTrue(detailedVcViewPage.isDetailedVcViewPageLoaded(), "Verify if detailed Vc view page is displayed");
-        PleaseConfirmPopupPage pleaseConfirmPopupPage = detailedVcViewPage.clickOnActivateButton();
+        PleaseConfirmPopupPage pleaseConfirmPopupPage = detailedVcViewPage.clickOnActivateButtonAndroid();
 
         assertTrue(pleaseConfirmPopupPage.isPleaseConfirmPopupPageLoaded(), "Verify if pop up page is displayed");
         OtpVerificationPage otpVerificationPage = pleaseConfirmPopupPage.clickOnConfirmButton();
@@ -150,9 +155,9 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(otpVerificationPage.isCancelButtonDisplayed(), "Verify if cancel button is displayed");
 
         otpVerificationPage.clickOnCancelButton();
-        HistoryPage historyPage = detailedVcViewPage.clickOnCrossIcon().clickOnHistoryButton();
+        HistoryPage historyPage = detailedVcViewPage.clickOnBackArrow().clickOnHistoryButton();
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyActivationFailedRecordInHistory(TestDataReader.readData("uin"), Target.ANDROID));
+        assertTrue(historyPage.verifyActivationFailedRecordInHistory(uin, Target.ANDROID));
     }
 
     @Test
@@ -172,7 +177,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
 
@@ -182,7 +187,8 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         RetrieveIdPage retrieveIdPage = addNewCardPage.clickOnDownloadViaUin();
 
         assertTrue(retrieveIdPage.isRetrieveIdPageLoaded(), "Verify if retrieve id page is displayed");
-        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(TestDataReader.readData("uin")).clickOnGenerateCardButton();
+        String uin = TestDataReader.readData("uin");
+        OtpVerificationPage otpVerification = retrieveIdPage.setEnterIdTextBox(uin).clickOnGenerateCardButton();
 
         assertTrue(otpVerification.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.ANDROID);
@@ -202,7 +208,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(moreOptionsPage.isVcActivatedForOnlineLogin(), "Verify if VC is activated");
         HistoryPage historyPage = moreOptionsPage.clickOnCloseButton().clickOnHistoryButton();
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(TestDataReader.readData("uin"), Target.ANDROID));
+        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(uin, Target.ANDROID));
 
     }
 
@@ -223,7 +229,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -231,11 +237,11 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(addNewCardPage.isAddNewCardPageLoaded(), "Verify if add new card page is displayed");
         EsignetLoginPage esignetLoginPage =  addNewCardPage.clickOnDownloadViaEsignet();
 
-        assertTrue(esignetLoginPage.isEsignetLoginPageDisplayed(), "Verify if esignet login page displayed");
         esignetLoginPage.clickOnEsignetLoginWithOtpButton();
         
         assertTrue(esignetLoginPage.isEnterYourVidTextDisplayed(), "Verify if enter your vid text is displayed");
-        OtpVerificationPage otpVerification= esignetLoginPage.setEnterIdTextBox(TestDataReader.readData("uin"));
+        String uin = TestDataReader.readData("uin");
+        OtpVerificationPage otpVerification= esignetLoginPage.setEnterIdTextBox(uin);
         
         esignetLoginPage.clickOnGetOtpButton();
         assertTrue(esignetLoginPage.isOtpHasSendMessageDisplayed(),"verify if otp page is displayed");
@@ -247,8 +253,9 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         DetailedVcViewPage detailedVcViewPage = homePage.openDetailedVcView(TestDataReader.readData("fullName"));
         
         assertTrue(detailedVcViewPage.isActivateButtonDisplayed(), "Verify if activate vc button displayed");
-        
-        PleaseConfirmPopupPage pleaseConfirmPopupPage  =detailedVcViewPage.clickOnActivateButton();
+
+
+        PleaseConfirmPopupPage pleaseConfirmPopupPage  =detailedVcViewPage.clickOnActivateButtonAndroid();
         assertTrue(pleaseConfirmPopupPage.isPleaseConfirmPopupPageLoaded(), "Verify if confirm popup page is displayed");
         
         pleaseConfirmPopupPage.clickOnConfirmButton();
@@ -256,8 +263,9 @@ public class VerifyHistoryTest extends AndroidBaseTest {
        
         otpVerification.enterOtp(TestDataReader.readData("passcode"), Target.ANDROID);
         assertTrue(detailedVcViewPage.isProfileAuthenticatedDisplayed(), "Verify profile authenticated displayed");
-        detailedVcViewPage.clickOnQrCrossIcon();
-        
+        detailedVcViewPage.clickOnCrossIcon();
+        detailedVcViewPage.clickOnBackArrow();
+
         MoreOptionsPage moreOptionsPage = homePage.clickOnMoreOptionsButton();
         assertTrue(moreOptionsPage.isMoreOptionsPageLoaded(), "Verify if more options page is displayed");
         
@@ -265,13 +273,13 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(pleaseConfirmPopupPage.isPleaseConfirmPopupPageLoaded(), "Verify if pop up page is displayed");
 
         pleaseConfirmPopupPage.clickOnConfirmButton();
-        assertTrue(homePage.isNoVCDownloaded(), "Verify if VC is removed");
+        assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(), "Bring your digital identity");
         
         HistoryPage historyPage = homePage.clickOnHistoryButton();
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(TestDataReader.readData("uin"), Target.ANDROID));
-        assertTrue(historyPage.verifyHistory(TestDataReader.readData("uin"), Target.ANDROID),"verify if download history is displayed");
-        assertTrue(historyPage.verifyDeleteHistory(TestDataReader.readData("uin"), Target.ANDROID), "Verify if deleted history is displayed");
+        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(uin, Target.ANDROID));
+        assertTrue(historyPage.verifyHistory(uin, Target.ANDROID),"verify if download history is displayed");
+        assertTrue(historyPage.verifyDeleteHistory(uin, Target.ANDROID), "Verify if deleted history is displayed");
     }
     
     @Test
@@ -291,7 +299,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         ConfirmPasscode confirmPasscode = setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(confirmPasscode.isConfirmPassCodePageLoaded(), "Verify if confirm passcode page is displayed");
-        HomePage homePage = confirmPasscode.confirmPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        HomePage homePage = confirmPasscode.enterPasscodeInConfirmPasscodePage(TestDataReader.readData("passcode"), Target.ANDROID);
 
         assertTrue(homePage.isHomePageLoaded(), "Verify if home page is displayed");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -299,11 +307,11 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         assertTrue(addNewCardPage.isAddNewCardPageLoaded(), "Verify if add new card page is displayed");
         EsignetLoginPage esignetLoginPage =  addNewCardPage.clickOnDownloadViaEsignet();
 
-        assertTrue(esignetLoginPage.isEsignetLoginPageDisplayed(), "Verify if esignet login page displayed");
         esignetLoginPage.clickOnEsignetLoginWithOtpButton();
         
         assertTrue(esignetLoginPage.isEnterYourVidTextDisplayed(), "Verify if enter your vid text is displayed");
-        OtpVerificationPage otpVerification= esignetLoginPage.setEnterIdTextBox(TestDataReader.readData("vid"));
+        String vid = TestDataReader.readData("vid");
+        OtpVerificationPage otpVerification= esignetLoginPage.setEnterIdTextBox(vid);
         
         esignetLoginPage.clickOnGetOtpButton();
         assertTrue(esignetLoginPage.isOtpHasSendMessageDisplayed(),"verify if otp page is displayed");
@@ -316,7 +324,7 @@ public class VerifyHistoryTest extends AndroidBaseTest {
         
         assertTrue(detailedVcViewPage.isActivateButtonDisplayed(), "Verify if activate vc button displayed");
         
-        PleaseConfirmPopupPage pleaseConfirmPopupPage  =detailedVcViewPage.clickOnActivateButton();
+        PleaseConfirmPopupPage pleaseConfirmPopupPage  =detailedVcViewPage.clickOnActivateButtonAndroid();
         assertTrue(pleaseConfirmPopupPage.isPleaseConfirmPopupPageLoaded(), "Verify if confirm popup page is displayed");
         
         pleaseConfirmPopupPage.clickOnConfirmButton();
@@ -324,8 +332,9 @@ public class VerifyHistoryTest extends AndroidBaseTest {
        
         otpVerification.enterOtp(TestDataReader.readData("passcode"), Target.ANDROID);
         assertTrue(detailedVcViewPage.isProfileAuthenticatedDisplayed(), "Verify profile authenticated displayed");
-        detailedVcViewPage.clickOnQrCrossIcon();
-        
+        detailedVcViewPage.clickOnCrossIcon();
+        detailedVcViewPage.clickOnBackArrow();
+
         MoreOptionsPage moreOptionsPage = homePage.clickOnMoreOptionsButton();
         assertTrue(moreOptionsPage.isMoreOptionsPageLoaded(), "Verify if more options page is displayed");
 
@@ -334,9 +343,9 @@ public class VerifyHistoryTest extends AndroidBaseTest {
 
         pleaseConfirmPopupPage.clickOnConfirmButton();
         
-        HistoryPage historyPage = moreOptionsPage.clickOnCloseButton().clickOnHistoryButton();
+        HistoryPage historyPage = homePage.clickOnHistoryButton();
         assertTrue(historyPage.isHistoryPageLoaded(), "Verify if history page is displayed");
-        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(TestDataReader.readData("vid"), Target.ANDROID));
-        assertTrue(historyPage.verifyHistory(TestDataReader.readData("vid"), Target.ANDROID),"verify if download history is displayed");
+        assertTrue(historyPage.verifyActivationSuccessfulRecordInHistory(vid, Target.ANDROID));
+        assertTrue(historyPage.verifyHistory(vid, Target.ANDROID),"verify if download history is displayed");
     }
 }

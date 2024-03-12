@@ -5,14 +5,16 @@ import {
   selectEmptyWalletBindingId,
   selectIsPinned,
   selectKebabPopUp,
-  selectKebabPopUpAcceptingBindingOtp,
-  selectKebabPopUpBindingWarning,
-  selectKebabPopUpWalletBindingInProgress,
+  selectAcceptingBindingOtp,
+  selectBindingWarning,
+  selectWalletBindingInProgress,
   selectOtpError,
   selectRemoveWalletWarning,
   selectShowActivities,
   selectShowWalletBindingError,
   selectWalletBindingError,
+  selectIsPhoneNumber,
+  selectIsEmail,
 } from '../machines/VCItemMachine/commonSelectors';
 import {
   ExistingMosipVCItemEvents,
@@ -48,12 +50,9 @@ export function useKebabPopUp(props) {
   const INPUT_OTP = (otp: string) => service.send(vcEvents.INPUT_OTP(otp));
   const RESEND_OTP = () => service.send(vcEvents.RESEND_OTP());
   const isPinned = useSelector(service, selectIsPinned);
-  const isBindingWarning = useSelector(service, selectKebabPopUpBindingWarning);
+  const isBindingWarning = useSelector(service, selectBindingWarning);
   const isRemoveWalletWarning = useSelector(service, selectRemoveWalletWarning);
-  const isAcceptingOtpInput = useSelector(
-    service,
-    selectKebabPopUpAcceptingBindingOtp,
-  );
+  const isAcceptingOtpInput = useSelector(service, selectAcceptingBindingOtp);
   const isWalletBindingError = useSelector(
     service,
     selectShowWalletBindingError,
@@ -66,12 +65,13 @@ export function useKebabPopUp(props) {
   );
   const WalletBindingInProgress = useSelector(
     service,
-    selectKebabPopUpWalletBindingInProgress,
+    selectWalletBindingInProgress,
   );
   const emptyWalletBindingId = useSelector(service, selectEmptyWalletBindingId);
   const isKebabPopUp = useSelector(service, selectKebabPopUp);
   const isShowActivities = useSelector(service, selectShowActivities);
-
+  const phoneNumber = useSelector(service, selectIsPhoneNumber);
+  const email = useSelector(service, selectIsEmail);
   const {appService} = useContext(GlobalContext);
   const activityLogService = appService.children.get('activityLog');
 
@@ -99,5 +99,7 @@ export function useKebabPopUp(props) {
     isShowActivities,
     isRemoveWalletWarning,
     activities: useSelector(activityLogService, selectActivities),
+    phoneNumber,
+    email,
   };
 }

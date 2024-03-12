@@ -1,8 +1,8 @@
 import React, {useEffect} from 'react';
-import {Icon, Tab} from 'react-native-elements';
-import {Column, Text} from '../../components/ui';
+import {Icon} from 'react-native-elements';
+import {Column} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
-import {HomeRouteProps} from '../../routes/main';
+import {HomeRouteProps} from '../../routes/routeTypes';
 import {MyVcsTab} from './MyVcsTab';
 import {ReceivedVcsTab} from './ReceivedVcsTab';
 import {ViewVcModal} from './ViewVcModal';
@@ -16,6 +16,7 @@ import {EsignetMosipVCItemMachine} from '../../machines/VCItemMachine/EsignetMos
 import {ErrorMessageOverlay} from '../../components/MessageOverlay';
 import {Pressable} from 'react-native';
 import testIDProps from '../../shared/commonUtil';
+import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 
 export const HomeScreen: React.FC<HomeRouteProps> = props => {
   const {t} = useTranslation('HomeScreen');
@@ -67,6 +68,7 @@ export const HomeScreen: React.FC<HomeRouteProps> = props => {
 
   return (
     <React.Fragment>
+      <BannerNotificationContainer />
       <Column fill backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
         {controller.haveTabsLoaded && (
           <Column fill>

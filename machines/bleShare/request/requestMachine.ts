@@ -20,7 +20,7 @@ import {
   RECEIVED_VCS_STORE_KEY,
 } from '../../../shared/constants';
 import {ActivityLogEvents, ActivityLogType} from '../../activityLog';
-import {VcEvents} from '../../vc';
+import {VcEvents} from '../../VCItemMachine/vc';
 import {subscribe} from '../../../shared/openIdBLE/verifierEventHandler';
 import {log} from 'xstate/lib/actions';
 import {VerifierDataEvent} from '@mosip/tuvali/src/types/events';
@@ -38,6 +38,7 @@ import {
   sendStartEvent,
 } from '../../../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../../../shared/telemetry/TelemetryConstants';
+import {getIdType} from '../../../shared/openId4VCI/Utils';
 // import { verifyPresentation } from '../shared/vcjs/verifyPresentation';
 
 const {verifier, EventTypes, VerificationStatus} = tuvali;
@@ -86,6 +87,7 @@ const model = createModel(
       FACE_VALID: () => ({}),
       FACE_INVALID: () => ({}),
       RETRY_VERIFICATION: () => ({}),
+      GOTO_HOME: () => ({}),
     },
   },
 );
@@ -126,6 +128,9 @@ export const requestMachine =
         },
         RESET: {
           target: '.checkNearbyDevicesPermission',
+        },
+        GOTO_HOME: {
+          target: '#request.reviewing.navigatingToHome',
         },
       },
       states: {
@@ -304,8 +309,8 @@ export const requestMachine =
               actions: ['sendVCReceivingDisconnectedEvent'],
             },
             VC_RECEIVED: {
-              target: 'reviewing.accepting',
               actions: 'setIncomingVc',
+              target: 'reviewing.accepting',
             },
           },
         },
@@ -364,43 +369,16 @@ export const requestMachine =
               },
             },
             accepting: {
-              initial: 'requestingReceivedVcs',
+              initial: 'prependingReceivedVcMetadata',
               states: {
-                requestingReceivedVcs: {
-                  entry: 'requestReceivedVcs',
-                  on: {
-                    VC_RESPONSE: [
-                      {
-                        target: 'requestingExistingVc',
-                        cond: 'hasExistingVc',
-                      },
-                      {
-                        target: 'prependingReceivedVc',
-                      },
-                    ],
-                  },
-                },
-                requestingExistingVc: {
-                  entry: 'requestExistingVc',
-                  on: {
-                    STORE_RESPONSE: {
-                      target: 'mergingIncomingVc',
-                    },
-                  },
-                },
-                mergingIncomingVc: {
-                  entry: 'mergeIncomingVc',
-                  on: {
-                    STORE_RESPONSE: {
-                      target: '#request.reviewing.accepted',
-                    },
-                  },
-                },
-                prependingReceivedVc: {
-                  entry: 'prependReceivedVc',
+                prependingReceivedVcMetadata: {
+                  entry: 'prependReceivedVcMetadata',
                   on: {
                     STORE_RESPONSE: {
                       target: 'storingVc',
+                    },
+                    STORE_ERROR: {
+                      target: '#request.reviewing.savingFailed',
                     },
                   },
                 },
@@ -410,12 +388,11 @@ export const requestMachine =
                     STORE_RESPONSE: {
                       target: '#request.reviewing.accepted',
                     },
+                    STORE_ERROR: {
+                      actions: 'removeReceivedVcMetadataFromStorage',
+                      target: '#request.reviewing.savingFailed',
+                    },
                   },
-                },
-              },
-              on: {
-                STORE_ERROR: {
-                  target: '#request.reviewing.savingFailed',
                 },
               },
             },
@@ -500,11 +477,10 @@ export const requestMachine =
               },
               states: {
                 idle: {},
-                viewingVc: {},
               },
               on: {
-                DISMISS: {
-                  target: '.viewingVc',
+                RESET: {
+                  target: '#request.waitingForConnection',
                 },
                 GO_TO_RECEIVED_VC_TAB: {
                   target: 'navigatingToHistory',
@@ -555,10 +531,6 @@ export const requestMachine =
         openAppPermission: () => {
           Linking.openSettings();
         },
-
-        requestReceivedVcs: send(VcEvents.GET_RECEIVED_VCS(), {
-          to: context => context.serviceRefs.vc,
-        }),
 
         setReadyForBluetoothStateCheck: model.assign({
           readyForBluetoothStateCheck: () => true,
@@ -623,8 +595,11 @@ export const requestMachine =
           },
         }),
 
-        prependReceivedVc: send(
+        prependReceivedVcMetadata: send(
           context => {
+            if (context.incomingVc) {
+              context.incomingVc.vcMetadata.timestamp = Date.now();
+            }
             return StoreEvents.PREPEND(
               RECEIVED_VCS_STORE_KEY,
               VCMetadata.fromVC(context.incomingVc?.vcMetadata),
@@ -633,22 +608,11 @@ export const requestMachine =
           {to: context => context.serviceRefs.store},
         ),
 
-        requestExistingVc: send(
-          context =>
-            StoreEvents.GET(VCMetadata.fromVC(context.incomingVc).getVcKey()),
-          {to: context => context.serviceRefs.store},
-        ),
-
-        mergeIncomingVc: send(
-          (context, event) => {
-            const existing = event.response as VC;
-            const updated: VC = {
-              ...existing,
-              reason: existing.reason.concat(context.incomingVc.reason),
-            };
-            return StoreEvents.SET(
-              VCMetadata.fromVC(updated).getVcKey(),
-              updated,
+        removeReceivedVcMetadataFromStorage: send(
+          context => {
+            return StoreEvents.REMOVE_VC_METADATA(
+              RECEIVED_VCS_STORE_KEY,
+              VCMetadata.fromVC(context.incomingVc?.vcMetadata).getVcKey(),
             );
           },
           {to: context => context.serviceRefs.store},
@@ -687,6 +651,8 @@ export const requestMachine =
             return ActivityLogEvents.LOG_ACTIVITY({
               _vcKey: vcMetadata.getVcKey(),
               type: context.receiveLogType,
+              id: vcMetadata.id,
+              idType: getIdType(vcMetadata.issuer),
               timestamp: Date.now(),
               deviceName:
                 context.senderInfo.name || context.senderInfo.deviceName,
@@ -696,14 +662,9 @@ export const requestMachine =
           {to: context => context.serviceRefs.activityLog},
         ),
 
-        sendVcReceived: send(
-          context => {
-            return VcEvents.VC_RECEIVED(
-              VCMetadata.fromVC(context.incomingVc?.vcMetadata),
-            );
-          },
-          {to: context => context.serviceRefs.vc},
-        ),
+        sendVcReceived: send(VcEvents.REFRESH_RECEIVED_VCS(), {
+          to: context => context.serviceRefs.vc,
+        }),
 
         clearShouldVerifyPresence: assign({
           incomingVc: context => ({

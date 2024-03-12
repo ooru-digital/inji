@@ -11,9 +11,8 @@ import {
 } from '../shared/constants';
 import {VCLabel} from '../types/VC/ExistingMosipVC/vc';
 import {StoreEvents} from './store';
-import getAllConfigurations, {
-  COMMON_PROPS_KEY,
-} from '../shared/commonprops/commonProps';
+import getAllConfigurations from '../shared/api';
+import {COMMON_PROPS_KEY} from '../shared/constants';
 import Storage from '../shared/storage';
 import ShortUniqueId from 'short-unique-id';
 import {__AppId} from '../shared/GlobalVariables';
@@ -31,7 +30,9 @@ const model = createModel(
     credentialRegistry: MIMOTO_BASE_URL,
     esignetHostUrl: ESIGNET_BASE_URL,
     appId: null,
+    isBackupAndRestoreExplored: false as boolean,
     hasUserShownWithHardwareKeystoreNotExists: false,
+    isAccountSelectionConfirmationShown: false,
     credentialRegistryResponse: '' as string,
   },
   {
@@ -54,6 +55,8 @@ const model = createModel(
       BACK: () => ({}),
       CANCEL: () => ({}),
       ACCEPT_HARDWARE_SUPPORT_NOT_EXISTS: () => ({}),
+      SET_IS_BACKUP_AND_RESTORE_EXPLORED: () => ({}),
+      SHOWN_ACCOUNT_SELECTION_CONFIRMATION: () => ({}),
     },
   },
 );
@@ -100,6 +103,9 @@ export const settingsMachine = model.createMachine(
           UPDATE_NAME: {
             actions: ['updateName', 'storeContext'],
           },
+          SET_IS_BACKUP_AND_RESTORE_EXPLORED: {
+            actions: ['setBackupAndRestoreOptionExplored', 'storeContext'],
+          },
           UPDATE_VC_LABEL: {
             actions: ['updateVcLabel', 'storeContext'],
           },
@@ -120,6 +126,13 @@ export const settingsMachine = model.createMachine(
           ACCEPT_HARDWARE_SUPPORT_NOT_EXISTS: {
             actions: [
               'updateUserShownWithHardwareKeystoreNotExists',
+              'storeContext',
+            ],
+            target: 'idle',
+          },
+          SHOWN_ACCOUNT_SELECTION_CONFIRMATION: {
+            actions: [
+              'updateIsAccountSelectionConfirmationShown',
               'storeContext',
             ],
             target: 'idle',
@@ -204,7 +217,9 @@ export const settingsMachine = model.createMachine(
       updateName: model.assign({
         name: (_, event) => event.name,
       }),
-
+      setBackupAndRestoreOptionExplored: model.assign({
+        isBackupAndRestoreExplored: () => true,
+      }),
       updateEsignetHostUrl: model.assign({
         esignetHostUrl: (_, event) => event.esignetHostUrl,
       }),
@@ -233,6 +248,10 @@ export const settingsMachine = model.createMachine(
 
       updateUserShownWithHardwareKeystoreNotExists: model.assign({
         hasUserShownWithHardwareKeystoreNotExists: () => true,
+      }),
+
+      updateIsAccountSelectionConfirmationShown: model.assign({
+        isAccountSelectionConfirmationShown: () => true,
       }),
 
       toggleBiometricUnlock: model.assign({
@@ -301,6 +320,10 @@ export function selectShowHardwareKeystoreNotExistsAlert(state: State) {
   return !hasShown && !deviceSupports;
 }
 
+export function selectShowAccountSelectionConfirmation(state: State) {
+  return !state.context.isAccountSelectionConfirmationShown;
+}
+
 export function selectVcLabel(state: State) {
   return state.context.vcLabel;
 }
@@ -323,4 +346,8 @@ export function selectBiometricUnlockEnabled(state: State) {
 
 export function selectIsResetInjiProps(state: State) {
   return state.matches('resetInjiProps');
+}
+
+export function selectIsBackUpAndRestoreExplored(state: State) {
+  return state.context.isBackupAndRestoreExplored;
 }

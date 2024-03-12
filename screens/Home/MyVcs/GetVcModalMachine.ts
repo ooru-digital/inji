@@ -24,12 +24,15 @@ const model = createModel(
     transactionId: '',
     iconColor: false,
     child: null,
+    phoneNumber: '' as string,
+    email: '' as string,
   },
   {
     events: {
       INPUT_ID: (id: string) => ({id}),
       INPUT_OTP: (otp: string) => ({otp}),
       VALIDATE_INPUT: () => ({}),
+      RESEND_OTP: () => ({}),
       ACTIVATE_ICON_COLOR: () => ({}),
       DEACTIVATE_ICON_COLOR: () => ({}),
       READY: (idInputRef: TextInput) => ({idInputRef}),
@@ -150,6 +153,7 @@ export const GetVcModalMachine =
                 onDone: [
                   {
                     target: '#GetVcModal.acceptingOtpInput',
+                    actions: ['setPhoneNumber', 'setEmail'],
                   },
                 ],
                 onError: [
@@ -177,6 +181,30 @@ export const GetVcModalMachine =
             DISMISS: {
               actions: ['resetIdInputRef'],
               target: '#GetVcModal.acceptingIdInput',
+            },
+            RESEND_OTP: {
+              target: '.resendOTP',
+            },
+          },
+          initial: 'idle',
+          states: {
+            idle: {},
+            resendOTP: {
+              invoke: {
+                src: 'requestOtp',
+                onDone: [
+                  {
+                    target: 'idle',
+                    actions: ['setPhoneNumber', 'setEmail'],
+                  },
+                ],
+                onError: [
+                  {
+                    actions: 'setIdBackendError',
+                    target: '#GetVcModal.acceptingIdInput.invalid.backend',
+                  },
+                ],
+              },
             },
           },
         },
@@ -217,6 +245,14 @@ export const GetVcModalMachine =
 
         setOtp: model.assign({
           otp: (_context, event) => event.otp,
+        }),
+
+        setPhoneNumber: model.assign({
+          phoneNumber: (_context, event) => event.data.response.maskedMobile,
+        }),
+
+        setEmail: model.assign({
+          email: (_context, event) => event.data.response.maskedEmail,
         }),
 
         setTransactionId: assign({
@@ -328,7 +364,7 @@ export const GetVcModalMachine =
       },
 
       guards: {
-        isEmptyId: ({id}) => !id || !id.length,
+        isEmptyId: ({id}) => id?.trim() === '',
 
         isWrongIdFormat: ({id}) => !/^\d{14,29}$/.test(id),
 
@@ -360,6 +396,14 @@ export function selectOtpError(state: State) {
 
 export function selectIconColor(state: State) {
   return state.context.iconColor;
+}
+
+export function selectIsPhoneNumber(state: State) {
+  return state.context.phoneNumber;
+}
+
+export function selectIsEmail(state: State) {
+  return state.context.email;
 }
 
 export function selectIsAcceptingIdInput(state: State) {

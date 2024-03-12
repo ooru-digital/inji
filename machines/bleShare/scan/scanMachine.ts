@@ -56,8 +56,8 @@ import {
   sendStartEvent,
 } from '../../../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../../../shared/telemetry/TelemetryConstants';
-
 import {logState} from '../../../shared/commonUtil';
+import {getIdType} from '../../../shared/openId4VCI/Utils';
 
 const {wallet, EventTypes, VerificationStatus} = tuvali;
 
@@ -69,7 +69,6 @@ const model = createModel(
     selectedVc: {} as VC,
     bleError: {} as BLEError,
     createdVp: null as VC,
-    reason: '',
     loggers: [] as EmitterSubscription[],
     vcName: '',
     verificationImage: {} as CameraCapturedPicture,
@@ -78,6 +77,7 @@ const model = createModel(
     QrLoginRef: {} as ActorRefFrom<typeof qrLoginMachine>,
     linkCode: '',
     readyForBluetoothStateCheck: false,
+    showFaceCaptureSuccessBanner: false,
   },
   {
     events: {
@@ -89,9 +89,11 @@ const model = createModel(
       VC_REJECTED: () => ({}),
       VC_SENT: () => ({}),
       CANCEL: () => ({}),
+      CLOSE_BANNER: () => ({}),
       STAY_IN_PROGRESS: () => ({}),
       RETRY: () => ({}),
       DISMISS: () => ({}),
+      GOTO_HISTORY: () => ({}),
       CONNECTED: () => ({}),
       DISCONNECT: () => ({}),
       BLE_ERROR: (bleError: BLEError) => ({bleError}),
@@ -106,7 +108,6 @@ const model = createModel(
       NEARBY_DISABLED: () => ({}),
       GOTO_SETTINGS: () => ({}),
       START_PERMISSION_CHECK: () => ({}),
-      UPDATE_REASON: (reason: string) => ({reason}),
       LOCATION_ENABLED: () => ({}),
       LOCATION_DISABLED: () => ({}),
       LOCATION_REQUEST: () => ({}),
@@ -161,7 +162,7 @@ export const scanMachine =
           target: '.checkStorage',
         },
         DISMISS: {
-          target: '#scan.reviewing.navigatingToHome',
+          target: '#scan.reviewing.disconnect',
         },
       },
       states: {
@@ -493,14 +494,11 @@ export const scanMachine =
         },
         reviewing: {
           entry: ['resetShouldVerifyPresence'],
-          exit: ['clearReason', 'clearCreatedVp'],
+          exit: ['clearCreatedVp'],
           initial: 'selectingVc',
           states: {
             selectingVc: {
               on: {
-                UPDATE_REASON: {
-                  actions: 'setReason',
-                },
                 DISCONNECT: {
                   target: '#scan.disconnected',
                 },
@@ -512,7 +510,10 @@ export const scanMachine =
                 },
                 ACCEPT_REQUEST: {
                   target: 'sendingVc',
-                  actions: 'setShareLogTypeUnverified',
+                  actions: [
+                    'setShareLogTypeUnverified',
+                    'resetFaceCaptureBannerStatus',
+                  ],
                 },
                 CANCEL: {
                   target: 'cancelling',
@@ -545,6 +546,9 @@ export const scanMachine =
                     CANCEL: {
                       target: '#scan.reviewing.cancelling',
                       actions: ['sendVCShareFlowCancelEndEvent'],
+                    },
+                    CLOSE_BANNER: {
+                      actions: ['resetFaceCaptureBannerStatus'],
                     },
                   },
                 },
@@ -595,23 +599,35 @@ export const scanMachine =
               entry: ['logShared', 'sendVcShareSuccessEvent'],
               on: {
                 DISMISS: {
-                  target: 'navigatingToHome',
+                  target: 'disconnect',
+                },
+                GOTO_HISTORY: {
+                  target: 'navigateToHistory',
                 },
               },
             },
             rejected: {
               on: {
-                DISMISS: {
+                RETRY: {
                   target: '#scan.clearingConnection',
                 },
               },
             },
-            navigatingToHome: {},
+            disconnect: {
+              //Renamed this to disconnect from navigateToHome as we are disconnecting the devices.
+              invoke: {
+                src: 'disconnect',
+              },
+            },
+            navigateToHistory: {},
             verifyingIdentity: {
               on: {
                 FACE_VALID: {
                   target: 'sendingVc',
-                  actions: 'setShareLogTypeVerified',
+                  actions: [
+                    'setShareLogTypeVerified',
+                    'updateFaceCaptureBannerStatus',
+                  ],
                 },
                 FACE_INVALID: {
                   target: 'invalidIdentity',
@@ -657,7 +673,7 @@ export const scanMachine =
               target: '#scan.reviewing.cancelling',
             },
             DISMISS: {
-              target: '#scan.reviewing.navigatingToHome',
+              target: '#scan.reviewing.disconnect',
             },
           },
         },
@@ -795,12 +811,6 @@ export const scanMachine =
           bleError: (_context, event) => event.bleError,
         }),
 
-        setReason: model.assign({
-          reason: (_context, event) => event.reason,
-        }),
-
-        clearReason: assign({reason: ''}),
-
         setSelectedVc: assign({
           selectedVc: (context, event) => {
             return {
@@ -851,6 +861,14 @@ export const scanMachine =
           shareLogType: 'PRESENCE_VERIFIED_AND_VC_SHARED',
         }),
 
+        updateFaceCaptureBannerStatus: model.assign({
+          showFaceCaptureSuccessBanner: true,
+        }),
+
+        resetFaceCaptureBannerStatus: model.assign({
+          showFaceCaptureSuccessBanner: false,
+        }),
+
         logShared: send(
           context => {
             const vcMetadata = context.selectedVc?.vcMetadata;
@@ -859,6 +877,8 @@ export const scanMachine =
               type: context.selectedVc.shouldVerifyPresence
                 ? 'VC_SHARED_WITH_VERIFICATION_CONSENT'
                 : context.shareLogType,
+              id: vcMetadata.id,
+              idType: getIdType(vcMetadata.issuer),
               timestamp: Date.now(),
               deviceName:
                 context.receiverInfo.name || context.receiverInfo.deviceName,
@@ -874,6 +894,8 @@ export const scanMachine =
               _vcKey: VCMetadata.fromVC(context.selectedVc).getVcKey(),
               type: 'PRESENCE_VERIFICATION_FAILED',
               timestamp: Date.now(),
+              idType: getIdType(context.selectedVc.issuer),
+              id: context.selectedVc.id,
               deviceName:
                 context.receiverInfo.name || context.receiverInfo.deviceName,
               vcLabel: context.selectedVc.id,
@@ -914,6 +936,8 @@ export const scanMachine =
           (_, event) =>
             ActivityLogEvents.LOG_ACTIVITY({
               _vcKey: '',
+              id: event.response.selectedVc.vcMetadata.id,
+              idType: getIdType(event.response.selectedVc.vcMetadata.issuer),
               type: 'QRLOGIN_SUCCESFULL',
               timestamp: Date.now(),
               deviceName: '',
@@ -1130,11 +1154,6 @@ export const scanMachine =
             ...(vp != null ? vp : context.selectedVc),
           };
 
-          const reason = [];
-          if (context.reason.trim() !== '') {
-            reason.push({message: context.reason, timestamp: Date.now()});
-          }
-
           const statusCallback = (event: WalletDataEvent) => {
             if (event.type === EventTypes.onDataSent) {
               callback({type: 'VC_SENT'});
@@ -1150,7 +1169,6 @@ export const scanMachine =
           wallet.sendData(
             JSON.stringify({
               ...vc,
-              reason,
             }),
           );
           const subscription = subscribe(statusCallback);

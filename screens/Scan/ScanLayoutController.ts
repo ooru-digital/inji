@@ -2,8 +2,11 @@ import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {useSelector} from '@xstate/react';
 import {useContext, useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
-import {MessageOverlayProps} from '../../components/MessageOverlay';
-import {MainBottomTabParamList, changeTabBarVisible} from '../../routes/main';
+import {
+  MessageOverlayProps,
+  VCSharingErrorStatusProps,
+} from '../../components/MessageOverlay';
+import {MainBottomTabParamList} from '../../routes/routeTypes';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {
   selectIsConnecting,
@@ -17,8 +20,10 @@ import {
   selectIsSendingVcTimeout,
   selectIsSent,
   selectIsDone,
+  selectIsFaceIdentityVerified,
 } from '../../machines/bleShare/scan/selectors';
 import {
+  selectBleError,
   selectIsAccepted,
   selectIsDisconnected,
   selectIsExchangingDeviceInfo,
@@ -31,10 +36,15 @@ import {
 import {ScanEvents} from '../../machines/bleShare/scan/scanMachine';
 import {BOTTOM_TAB_ROUTES, SCAN_ROUTES} from '../../routes/routesConstants';
 import {ScanStackParamList} from '../../routes/routesConstants';
+import {Theme} from '../../components/ui/styleUtils';
 
 type ScanLayoutNavigation = NavigationProp<
   ScanStackParamList & MainBottomTabParamList
 >;
+
+const changeTabBarVisible = (visible: string) => {
+  Theme.BottomTabBarStyle.tabBarStyle.display = visible;
+};
 
 // TODO: refactor
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -47,6 +57,7 @@ export function useScanLayout() {
   const isLocationDisabled = useSelector(scanService, selectIsLocationDisabled);
   const isLocationDenied = useSelector(scanService, selectIsLocationDenied);
   const isBleError = useSelector(scanService, selectIsHandlingBleError);
+  const bleError = useSelector(scanService, selectBleError);
 
   const locationError = {message: '', button: ''};
 
@@ -60,9 +71,20 @@ export function useScanLayout() {
 
   const DISMISS = () => scanService.send(ScanEvents.DISMISS());
   const CANCEL = () => scanService.send(ScanEvents.CANCEL());
+  const CLOSE_BANNER = () => scanService.send(ScanEvents.CLOSE_BANNER());
   const onStayInProgress = () =>
     scanService.send(ScanEvents.STAY_IN_PROGRESS());
   const onRetry = () => scanService.send(ScanEvents.RETRY());
+  const GOTO_HOME = () => {
+    scanService.send(ScanEvents.DISMISS());
+    changeTabBarVisible('flex');
+    navigation.navigate(BOTTOM_TAB_ROUTES.home);
+  };
+  const GOTO_HISTORY = () => {
+    scanService.send(ScanEvents.GOTO_HISTORY());
+    changeTabBarVisible('flex');
+    navigation.navigate(BOTTOM_TAB_ROUTES.history);
+  };
 
   const isInvalid = useSelector(scanService, selectIsInvalid);
   const isConnecting = useSelector(scanService, selectIsConnecting);
@@ -84,7 +106,12 @@ export function useScanLayout() {
   const isOffline = useSelector(scanService, selectIsOffline);
   const isSendingVc = useSelector(scanService, selectIsSendingVc);
   const isSendingVcTimeout = useSelector(scanService, selectIsSendingVcTimeout);
+  const isDisconnected = useSelector(scanService, selectIsDisconnected);
   const isStayInProgress = isConnectingTimeout || isSendingVcTimeout;
+  let isFaceIdentityVerified = useSelector(
+    scanService,
+    selectIsFaceIdentityVerified,
+  );
 
   let statusOverlay: Pick<
     MessageOverlayProps,
@@ -92,7 +119,7 @@ export function useScanLayout() {
     | 'message'
     | 'hint'
     | 'onButtonPress'
-    | 'customHeight'
+    | 'minHeight'
     | 'buttonText'
     | 'onStayInProgress'
     | 'onRetry'
@@ -156,12 +183,6 @@ export function useScanLayout() {
       message: t('status.accepted.message'),
       onButtonPress: DISMISS,
     };
-  } else if (isRejected) {
-    statusOverlay = {
-      title: t('status.rejected.title'),
-      message: t('status.rejected.message'),
-      onBackdropPress: DISMISS,
-    };
   } else if (isInvalid) {
     statusOverlay = {
       message: t('status.invalid'),
@@ -172,13 +193,27 @@ export function useScanLayout() {
       message: t('status.offline'),
       onBackdropPress: DISMISS,
     };
+  }
+
+  let errorStatusOverlay: Pick<
+    VCSharingErrorStatusProps,
+    'title' | 'message'
+  > | null = null;
+
+  if (isRejected) {
+    errorStatusOverlay = {
+      title: t('status.rejected.title'),
+      message: t('status.rejected.message'),
+    };
+  } else if (isDisconnected) {
+    errorStatusOverlay = {
+      title: t('status.disconnected.title'),
+      message: t('status.disconnected.message'),
+    };
   } else if (isBleError) {
-    statusOverlay = {
-      title: t('status.bleError.title'),
-      hint: t('status.bleError.message'),
-      onButtonPress: DISMISS,
-      onRetry,
-      progress: true,
+    errorStatusOverlay = {
+      title: t(`status.bleError.${bleError.code}.title`),
+      message: t(`status.bleError.${bleError.code}.message`),
     };
   }
 
@@ -221,14 +256,21 @@ export function useScanLayout() {
   return {
     isInvalid,
     isDone,
-    isDisconnected: useSelector(scanService, selectIsDisconnected),
+    GOTO_HOME,
+    GOTO_HISTORY,
+    isDisconnected,
     statusOverlay,
+    errorStatusOverlay,
     isStayInProgress,
     isBleError,
+    bleError,
     DISMISS,
     isAccepted,
+    isRejected,
     onRetry,
     CANCEL,
     isSendingVc,
+    isFaceIdentityVerified,
+    CLOSE_BANNER,
   };
 }

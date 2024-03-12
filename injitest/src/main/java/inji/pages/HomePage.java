@@ -4,7 +4,12 @@ import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.RemoteWebElement;
+
+import com.google.common.collect.ImmutableMap;
 
 public class HomePage extends BasePage {
     @AndroidFindBy(accessibility = "plusIcon")
@@ -55,9 +60,13 @@ public class HomePage extends BasePage {
     @iOSXCUITFindBy(accessibility = "errorTitle")
     private WebElement noInternetConnection;
 
-    @AndroidFindBy(accessibility = "scan")
-    @iOSXCUITFindBy(accessibility = "scan")
-    private WebElement scanButton;
+    @AndroidFindBy(accessibility = "share")
+    @iOSXCUITFindBy(accessibility = "share")
+    private WebElement shareButton;
+    
+    @AndroidFindBy(uiAutomator = "new UiSelector().className(\"android.widget.TextView\").instance(6);")// fix with accecibility
+    @iOSXCUITFindBy(accessibility = "share")
+    private WebElement shareButtonByForText;
 
     @AndroidFindBy(accessibility = "nationalCard")
     @iOSXCUITFindBy(accessibility = "nationalCard")
@@ -66,14 +75,47 @@ public class HomePage extends BasePage {
     @AndroidFindBy(accessibility = "tryAgain")
     @iOSXCUITFindBy(accessibility = "errorTitle")
     private WebElement tryAgainButton;
-    
+
     @AndroidFindBy(uiAutomator = "new UiSelector().textContains(\"Subukan muli\")")
     private WebElement tryAgainButtonInFillpino;
+    
+    @AndroidFindBy(accessibility = "downloadingVcPopupText")
+    @iOSXCUITFindBy(accessibility = "Downloading your card, this can take upto 5 minutes")
+    private WebElement downloadingVcPopup;
+
+    @AndroidFindBy(accessibility = "fullNameValue")
+    @iOSXCUITFindBy(accessibility = "fullNameValue")
+    private WebElement fullNameValue;
+
+    @AndroidFindBy(accessibility = "activationPending")
+    @iOSXCUITFindBy(accessibility = "activationPending")
+    private WebElement activationPending;
+
+    @AndroidFindBy(xpath = "(//android.view.ViewGroup[@content-desc=\"ellipsis\"])[1]")
+    private WebElement moreOptionsforFirstVc;
+
+    @AndroidFindBy(xpath = "(//android.view.ViewGroup[@content-desc=\"ellipsis\"])[2]")
+    private WebElement moreOptionsforSecondVc;
+
+    @AndroidFindBy(accessibility = "close")
+    @iOSXCUITFindBy(accessibility = "close")
+    private WebElement popupCloseButton;
+
+    @AndroidFindBy(accessibility = "activatedVcPopupText")
+    @iOSXCUITFindBy(accessibility = "activatedVcPopupText")
+    private WebElement activatedVcPopupText;
+
+    @AndroidFindBy(accessibility = "fullNameTitle")
+    @iOSXCUITFindBy(accessibility = "fullNameTitle")
+    private WebElement fullNameTitle;
+
+
 
     public HomePage(AppiumDriver driver) {
         super(driver);
     }
 
+    BasePage basePage = new BasePage(driver);
     public boolean isHomePageLoaded() {
         /*if (isElementDisplayed(secureKeyStoragePopup, "secure key storage popup")) {
             clickOnElement(riskItButton);
@@ -81,7 +123,7 @@ public class HomePage extends BasePage {
 //        if (isElementDisplayed(securityFeatureUnavailablePopup, "security features will be unavailable popup")) {
 //            clickOnElement(okButton);
 //        }
-        return this.isElementDisplayed(homeButton, "Home page");
+        return this.isElementDisplayed(homeButton);
     }
 
     public AddNewCardPage downloadCard() {
@@ -91,18 +133,18 @@ public class HomePage extends BasePage {
 
     public boolean isNameDisplayed(String name) {
         By fullName = By.xpath("//*[contains(@value,'" + name + "') or contains(@text,'" + name + "')]");
-        return this.isElementDisplayed(fullName, 120, "Name on downloaded card");
+        return this.isElementDisplayed(fullName, 120);
     }
-    
-   public boolean isSecondNameDisplayed(String name) {
-    	By fullName = By.xpath("(//*[contains(@value,'" + name + "') or contains(@text,'" + name + "')])[2]");
-        return this.isElementDisplayed(fullName, 60, "Name on downloaded card");
-    	
-   }
+
+    public boolean isSecondNameDisplayed(String name) {
+        By fullName = By.xpath("(//*[contains(@value,'" + name + "') or contains(@text,'" + name + "')])[2]");
+        return this.isElementDisplayed(fullName, 60);
+
+    }
 
     public DetailedVcViewPage openDetailedVcView(String name) {
         By fullName = By.xpath("//*[contains(@value,'" + name + "') or contains(@text,'" + name + "')]");
-        clickOnElement(fullName);
+        clickOnElement(fullNameTitle);
         return new DetailedVcViewPage(driver);
     }
 
@@ -128,64 +170,106 @@ public class HomePage extends BasePage {
     }
 
     public boolean isPinIconDisplayed() {
-        return this.isElementDisplayed(pinIcon, "pin icon");
+        return this.isElementDisplayed(pinIcon);
     }
     
-    public boolean isNoVCDownloaded() {
-        return this.isElementDisplayed(bringYourDigitalIdentity, "Bring your digital identity");
-    }
-    
-    public boolean isNoVCDownloadedInFilipino() {
-        return this.isElementDisplayed(bringYourDigitalIdentity, "Dalhin ang Iyong Digital ID");
+    public String  verifyLanguageForNoVCDownloadedPageLoaded(){
+    	return getTextFromLocator(bringYourDigitalIdentity); 
     }
 
-    public boolean isNoInternetConnectionDisplayed() {
-        return this.isElementDisplayed(noInternetConnection, "No internet connection");
-    }
-    
-    public boolean isNoInternetConnectionDisplayedInTamil() {
-        return this.isElementDisplayed(noInternetConnection, "இணைய இணைப்பு இல்லை");
-    }
-    public boolean isNoInternetConnectionDisplayedFlillpino() {
-        return this.isElementDisplayed(noInternetConnection, "Pakisuri ang iyong koneksyon at subukang muli");
+    public boolean  verifyLanguageForNoInternetConnectionDisplayed(String language){
+    	String actualText = getTextFromLocator(noInternetConnection);
+
+    	switch (language) {
+    	case "English":
+    		boolean isEnglishMatch  = (actualText.equalsIgnoreCase("No internet connection")==true) ? true : false;
+    		return isEnglishMatch ;
+    	case "Tamil":
+    		boolean isTamilMatch  = (actualText.equalsIgnoreCase("இணைய இணைப்பு இல்லை")==true) ? true : false;
+    		return isTamilMatch ;
+    	case "Filipino":
+    		boolean isFilipinoMatch  = (actualText.equalsIgnoreCase("Pakisuri ang iyong koneksyon at subukang muli")==true) ? true : false;
+    		return isFilipinoMatch ;
+
+    	}
+    	return false;
     }
 
-    public ScanPage clickOnScanButton(){
-        clickOnElement(scanButton);
-        return new ScanPage(driver);
+    public SharePage clickOnShareButton() {
+        clickOnElement(shareButton);
+        return new SharePage(driver);
     }
+    
+    public String getShareButton() {
+    	return getTextFromLocator(shareButtonByForText);
+    }
+
     public boolean isIdTypeDisplayed() {
-        return this.isElementDisplayed(idTypeValue, "Name on downloaded card");
+        return this.isElementDisplayed(idTypeValue);
     }
     
-    public boolean isTryAgainButtonDisplayedInFlillpino() {
-        return this.isElementDisplayed(tryAgainButtonInFillpino, "Subukan muli");
-    }
-    
-    public boolean isTryAgainButtonDisplayedInTamil() {
-        return this.isElementDisplayed(tryAgainButton, "மீண்டும் முயற்சி செய்");
-    }
-    
-    public boolean isTryAgainButtonNotDisplayedInFlillpino() {
-        return this.isElementInvisibleYet(tryAgainButtonInFillpino, "Subukan muli");
-    }
-    
-    public boolean isTryAgainButtonDisplayed() {
-        return this.isElementDisplayed(tryAgainButton, "Try again");
-    }
-    
-    public boolean isTryAgainButtonNotDisplayed() {
-        return this.isElementInvisibleYet(tryAgainButton, "Try again");
+    public boolean  verifyLanguageForTryAgainButtonDisplayed(String language){
+    	String actualText = getTextFromLocator(tryAgainButton);
+
+    	switch (language) {
+    	case "English":
+    		boolean isEnglishMatch  = (actualText.equalsIgnoreCase("Try again")==true) ? true : false;
+    		return isEnglishMatch ;
+    	case "Tamil":
+    		boolean isTamilMatch  = (actualText.equalsIgnoreCase("மீண்டும் முயற்சி செய்")==true) ? true : false;
+    		return isTamilMatch ;
+    	case "Filipino":
+    		boolean isFilipinoMatch  = (actualText.equalsIgnoreCase("Subukan muli")==true) ? true : false;
+    		return isFilipinoMatch ;
+
+    	}
+    	return false;
     }
 
-    public HomePage clickOnTryAgainButton() {
-    	 clickOnElement(tryAgainButton);
-         return this;
+    public boolean isTryAgainButtonNotDisplayedInFlillpino() {
+        return this.isElementInvisibleYet(tryAgainButtonInFillpino);
+    }
+
+    public boolean isTryAgainButtonNotDisplayed() {
+        return this.isElementInvisibleYet(tryAgainButton);
+    }
+
+    public void clickOnTryAgainButton() {
+        clickOnElement(tryAgainButton);
     }
     
-    public HomePage clickOnTryAgainButtonInFlillpino() {
-   	 clickOnElement(tryAgainButtonInFillpino);
-        return this;
-   }
-    
+    public boolean isDownloadingVcPopupDisplayed() {
+        return this.retrieIsElementVisible(downloadingVcPopup);
+    }
+
+    public String getfullNameTitleText() {
+        return this.getTextFromLocator(fullNameTitle);
+    }
+    public String  getFullNameValue(){
+        return getTextFromLocator(fullNameValue);
+    }
+    public String GetIdTypeText() {
+        return this.getTextFromLocator(idTypeValue);
+    }
+
+    public String GetActivationPendingText() {
+        return this.getTextFromLocator(activationPending);
+    }
+
+    public void clickOnFirstVcsEllipsisButton() {
+        clickOnElement(moreOptionsforFirstVc);
+    }
+
+    public void clickOnSecondVcsEllipsisButton() {
+        clickOnElement(moreOptionsforSecondVc);
+    }
+
+    public boolean isActivatedVcPopupTextDisplayed() {
+        return this.isElementDisplayed(activatedVcPopupText);
+    }
+
+    public void clickPopupCloseButtonButton() {
+        clickOnElement(popupCloseButton);
+    }
+
 }

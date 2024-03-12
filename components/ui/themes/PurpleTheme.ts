@@ -1,7 +1,14 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import {Dimensions, I18nManager, StyleSheet, ViewStyle} from 'react-native';
+import {
+  Dimensions,
+  I18nManager,
+  StatusBar,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
 import {Spacing} from '../styleUtils';
 import {isIOS} from '../../../shared/constants';
+import Constants from 'expo-constants';
 
 const Colors = {
   Black: '#231F20',
@@ -18,12 +25,15 @@ const Colors = {
   DimGray: '#737373',
   platinumGrey: '#EDEDED',
   Orange: '#F2811D',
+  OrangeBrown: '#D9822B',
+  Blue: '#0000FF',
   LightOrange: '#FDF1E6',
   LightGrey: '#FAF9FF',
   ShadeOfGrey: '#6F6F6F',
   mediumDarkGrey: '#7B7B7B',
   White: '#FFFFFF',
   Red: '#EB5757',
+  LightRed: '#DB2E2E',
   Green: '#219653',
   Transparent: 'transparent',
   Warning: '#f0ad4e',
@@ -38,7 +48,7 @@ const Colors = {
   Purple: '#70308C',
   LightPurple: '#F3E2FF',
   TimeoutHintBoxColor: '#FBF5FF',
-  TimeoutHintBoxBorder: '#FFF7E5',
+  TimeoutHintBoxBorder: '#F3E2FF',
   TimeoutHintText: '#1C1C1C',
   resendCodeTimer: '#555555',
   uncheckedIcon: '#DBDBDB',
@@ -47,6 +57,9 @@ const Colors = {
   stroke: '#8449A5',
   iconBg: '#fbf5ff',
   warningLogoBg: '#F3E2FF',
+  tooltip: '#B7B7B7',
+  toolTipContent: '#4B4B4B',
+  toolTipPointer: '#E0E0E0',
 };
 
 export type ElevationLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -119,6 +132,9 @@ export const PurpleTheme = {
     linearGradientEnd: Colors.endColor,
     LinearGradientStroke: Colors.stroke,
     warningLogoBgColor: Colors.warningLogoBg,
+    tooltipIcon: Colors.tooltip,
+    toolTipPointerColor: Colors.toolTipPointer,
+    urlLink: Colors.Purple,
   },
   Styles: StyleSheet.create({
     title: {
@@ -202,14 +218,6 @@ export const PurpleTheme = {
       height: Dimensions.get('window').height * 0.045,
       borderRadius: 6,
       backgroundColor: Colors.LightPurple,
-    },
-    downloadingVcPopUp: {
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: Colors.Green,
-      height: 39,
-      position: 'relative',
-      paddingHorizontal: 12,
     },
     homeScreenContainer: {
       alignItems: 'center',
@@ -342,6 +350,7 @@ export const PurpleTheme = {
       flex: 1,
       padding: 10,
       overflow: 'hidden',
+      borderRadius: 10,
     },
     successTag: {
       backgroundColor: Colors.Green,
@@ -367,8 +376,8 @@ export const PurpleTheme = {
       height: 173.276,
     },
     logo: {
-      width: 40,
-      height: 40,
+      height: 65,
+      width: 65,
     },
     issuerLogo: {
       resizeMode: 'contain',
@@ -376,8 +385,8 @@ export const PurpleTheme = {
       height: 60,
     },
     vcDetailsLogo: {
-      width: 90,
-      height: 35,
+      height: 65,
+      width: 65,
     },
     homeCloseCardDetailsHeader: {
       flex: 1,
@@ -402,6 +411,23 @@ export const PurpleTheme = {
       height: 40,
       borderRadius: 6,
       backgroundColor: Colors.LightPurple,
+    },
+    ProfileIconContainer: {
+      alignSelf: 'center',
+      justifyContent: 'center',
+      width: 90,
+      height: 90,
+      borderRadius: 15,
+      borderWidth: 0.3,
+      borderColor: Colors.Purple,
+      backgroundColor: Colors.White,
+    },
+    ProfileIconInnerStyle: {
+      flex: 1,
+    },
+    ProfileIconPinnedStyle: {
+      alignSelf: 'center',
+      justifyContent: 'center',
     },
     IconContainer: {
       padding: 6,
@@ -528,20 +554,30 @@ export const PurpleTheme = {
       fontFamily: 'Inter_700Bold',
     },
     idInputContainer: {
-      marginTop: 20,
-      marginRight: Dimensions.get('window').width * 0.26,
+      width: Dimensions.get('window').width * 0.86,
     },
     idInputPicker: {
       width: Dimensions.get('window').width * 0.32,
       borderBottomWidth: 1,
-      marginBottom: 2,
       borderColor: isIOS() ? 'transparent' : Colors.Grey,
-      bottom: isIOS() ? 50 : 24,
+      bottom: isIOS() ? 50 : 20,
       height: isIOS() ? 100 : 'auto',
     },
+    picker: {
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 18,
+    },
     idInputBottom: {
+      position: 'relative',
+      bottom: 18,
       borderBottomColor: Colors.Purple,
       borderBottomWidth: 1,
+      minWidth: 210,
+    },
+    idInput: {
+      position: 'relative',
+      bottom: 18,
+      minWidth: 210,
     },
     getId: {
       justifyContent: 'center',
@@ -590,6 +626,107 @@ export const PurpleTheme = {
       position: 'absolute',
     },
     boxShadow: generateBoxShadowStyle(),
+    tooltipContainerStyle: {
+      backgroundColor: '#FAFAFA',
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      marginLeft: 15,
+    },
+    tooltipContentDescription: {
+      color: Colors.toolTipContent,
+      marginTop: 10,
+    },
+    tooltipHrLine: {
+      borderBottomColor: Colors.Grey5,
+      borderBottomWidth: 1,
+      marginTop: 10,
+    },
+    introSliderHeader: {
+      marginTop: isIOS()
+        ? Constants.statusBarHeight + 40
+        : StatusBar.currentHeight + 40,
+      width: '100%',
+      marginBottom: 50,
+    },
+    introSliderButton: {
+      borderRadius: 10,
+      height: 50,
+      marginTop: -10,
+    },
+    keyboardAvoidStyle: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    passwordKeyboardAvoidStyle: {
+      flex: 1,
+      backgroundColor: Colors.White,
+      paddingVertical: 40,
+      paddingHorizontal: 24,
+    },
+    newLabel: {
+      backgroundColor: Colors.Purple,
+      paddingHorizontal: 5,
+      paddingVertical: 4,
+      maxHeight: 20,
+      marginTop: 10,
+      borderRadius: 4,
+      fontSize: 10,
+      fontFamily: 'Inter_700Bold',
+      lineHeight: 12,
+    },
+    scanLayoutHeaderContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      marginLeft: I18nManager.isRTL ? 40 : 15,
+      marginTop: 15,
+    },
+    scanLayoutHeaderTitle: {
+      fontSize: 26,
+      fontFamily: 'Inter_600SemiBold',
+      paddingTop: isIOS() ? 10 : 20,
+      paddingBottom: 10,
+    },
+    sendVcHeaderContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      marginLeft: I18nManager.isRTL ? 50 : 0,
+      marginTop: 15,
+    },
+    HistoryHeaderTitleStyle: {
+      fontSize: 26,
+      fontFamily: 'Inter_600SemiBold',
+      marginTop: isIOS() ? 5 : 15,
+    },
+  }),
+  BannerStyles: StyleSheet.create({
+    container: {
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      backgroundColor: '#DB2E2E',
+      width: '100%',
+      position: 'relative',
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      marginVertical: 1,
+      columnGap: 7,
+    },
+    text: {
+      textAlignVertical: 'center',
+      fontSize: 12,
+      lineHeight: 15,
+      padding: 1,
+      fontFamily: 'Inter_600SemiBold',
+    },
+    dismiss: {paddingLeft: 9},
+    info: {
+      backgroundColor: Colors.OrangeBrown,
+    },
+    success: {
+      backgroundColor: Colors.Green,
+    },
+    error: {
+      backgroundColor: Colors.LightRed,
+    },
   }),
   QrCodeStyles: StyleSheet.create({
     magnifierZoom: {
@@ -684,9 +821,21 @@ export const PurpleTheme = {
       fontFamily: 'Inter_600SemiBold',
       lineHeight: 18,
     },
+    helpHeader: {
+      color: Colors.Black,
+      fontFamily: 'Inter_700Bold',
+      fontSize: 18,
+      lineHeight: 19,
+      paddingTop: 5,
+      margin: 7,
+    },
     helpDetails: {
       margin: 5,
       color: Colors.Gray44,
+      fontFamily: 'Inter_600SemiBold',
+    },
+    urlLinkText: {
+      color: Colors.Purple,
       fontFamily: 'Inter_600SemiBold',
     },
     aboutDetails: {
@@ -696,9 +845,13 @@ export const PurpleTheme = {
       lineHeight: 18,
     },
     error: {
+      position: 'absolute',
+      top: 30,
+      left: 5,
       color: Colors.Red,
       fontFamily: 'Inter_600SemiBold',
       fontSize: 12,
+      minWidth: 200,
     },
     base: {
       color: Colors.Black,
@@ -748,6 +901,7 @@ export const PurpleTheme = {
       color: 'transparent',
       backgroundColor: Colors.Grey5,
       borderRadius: 4,
+      marginBottom: 2,
     },
     subtitle: {
       backgroundColor: 'transparent',
@@ -824,6 +978,11 @@ export const PurpleTheme = {
       backgroundColor: Colors.Transparent,
       borderColor: Colors.Purple,
     },
+    disabledOutlineButton: {
+      backgroundColor: Colors.Transparent,
+      color: Colors.Grey,
+      borderColor: Colors.Grey,
+    },
     container: {
       height: 45,
       flexDirection: 'row',
@@ -838,7 +997,6 @@ export const PurpleTheme = {
       borderRadius: 9,
       width: Dimensions.get('window').width * 0.72,
       alignSelf: 'center',
-      margin: 3,
       height: 54,
     },
     float: {
@@ -896,6 +1054,13 @@ export const PurpleTheme = {
     sharedSuccessfully: {
       flex: 1,
       backgroundColor: Colors.White,
+    },
+    sharedSuccessfullyIconStyle: {
+      margin: 16,
+      padding: 8,
+      borderWidth: 2,
+      borderColor: Colors.Purple,
+      borderRadius: 30,
     },
   }),
   AppMetaDataStyles: StyleSheet.create({
@@ -958,6 +1123,42 @@ export const PurpleTheme = {
     modal: {
       width: Dimensions.get('screen').width,
       height: Dimensions.get('screen').height,
+    },
+  }),
+  BackupAndRestoreStyles: StyleSheet.create({
+    backupProgressText: {
+      fontFamily: 'Inter_400Regular',
+      fontSize: 14,
+      color: Colors.Gray44,
+    },
+    actionOrLoaderContainer: {
+      marginLeft: 1,
+      marginRight: 1,
+    },
+    backupProcessInfo: {
+      fontWeight: 'bold',
+      paddingHorizontal: 20,
+      textAlign: 'center',
+      lineHeight: 22,
+      fontSize: 17,
+      fontFamily: 'Inter_600SemiBold',
+      marginHorizontal: 30,
+    },
+    cloudInfo: {
+      paddingHorizontal: 20,
+      textAlign: 'center',
+      paddingVertical: 15,
+    },
+    cloudLabel: {
+      fontWeight: '600',
+      paddingHorizontal: 10,
+      textAlign: 'center',
+      paddingTop: 15,
+      fontFamily: 'Inter_500Medium',
+      fontSize: 14,
+      letterSpacing: 0,
+      lineHeight: 17,
+      minHeight: 50,
     },
   }),
   TextEditOverlayStyles: StyleSheet.create({
@@ -1232,26 +1433,40 @@ export const PurpleTheme = {
     issuerBoxContainer: {
       margin: 5,
       flex: 1,
-      padding: 10,
       borderRadius: 6,
       alignItems: 'flex-start',
       justifyContent: 'space-evenly',
-      flexDirection: 'column',
-      paddingHorizontal: 6,
-      paddingVertical: 8,
+      flexDirection: 'row',
+      paddingHorizontal: 10,
+      paddingVertical: 10,
       backgroundColor: Colors.White,
     },
     issuerBoxContainerPressed: {
       margin: 5,
       flex: 1,
-      padding: 10,
+
       borderRadius: 6,
       alignItems: 'flex-start',
       justifyContent: 'space-evenly',
-      flexDirection: 'column',
-      paddingHorizontal: 6,
-      paddingVertical: 8,
+      flexDirection: 'row',
+      paddingHorizontal: 10,
+      paddingVertical: 10,
       backgroundColor: Colors.Grey,
+    },
+    issuerBoxContent: {
+      flex: 1,
+      alignSelf: 'center',
+      justifyContent: 'center',
+      paddingLeft: 15,
+    },
+    issuerBoxIconContainer: {
+      alignSelf: 'center',
+      justifyContent: 'center',
+    },
+    issuersSearchSubText: {
+      marginBottom: 14,
+      fontSize: 12,
+      marginHorizontal: 9,
     },
     issuerHeading: {
       fontFamily: 'Inter_600SemiBold',
@@ -1290,6 +1505,7 @@ export const PurpleTheme = {
       lineHeight: 21,
       paddingTop: 4,
       textAlign: 'center',
+      marginBottom: 10,
     },
     message: {
       textAlign: 'center',
@@ -1298,7 +1514,7 @@ export const PurpleTheme = {
       lineHeight: 20,
       marginTop: 6,
       marginBottom: 25,
-      marginHorizontal: 40,
+      marginHorizontal: 26,
       color: Colors.mediumDarkGrey,
     },
   }),
@@ -1334,10 +1550,11 @@ export const PurpleTheme = {
   ICON_LARGE_SIZE: 33,
   CloseCard: require('../../../assets/Card_Bg1.png'),
   OpenCard: require('../../../assets/Card_Bg1.png'),
-  sharingIntro: require('../../../assets/Intro_Secure_Sharing.png'),
-  walletIntro: require('../../../assets/Intro_Wallet_Binding.png'),
-  IntroScanner: require('../../../assets/Intro_Scanner.png'),
-  protectPrivacy: require('../../../assets/Intro_Unlock_Method.png'),
+  IntroWelcome: require('../../../assets/Intro_Unlock.png'),
+  SecureSharing: require('../../../assets/Intro_Secure_Sharing.png'),
+  DigitalWallet: require('../../../assets/Intro_Wallet.png'),
+  IntroShare: require('../../../assets/Intro_Share.png'),
+  IntroBackup: require('../../../assets/Intro_Backup.png'),
   elevation(level: ElevationLevel): ViewStyle {
     // https://ethercreative.github.io/react-native-shadow-generator/
 

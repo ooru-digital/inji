@@ -3,19 +3,16 @@ import {
   BottomTabNavigationOptions,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import {Icon} from 'react-native-elements';
 import {RequestRouteProps, RootRouteProps} from '../routes';
-import {mainRoutes, scan} from '../routes/main';
+import {mainRoutes, share} from '../routes/main';
 import {Theme} from '../components/ui/styleUtils';
 import {useTranslation} from 'react-i18next';
-import {Row} from '../components/ui';
-import {Image} from 'react-native';
-import {SettingScreen} from './Settings/SettingScreen';
-import {HelpScreen} from '../components/HelpScreen';
-
+import {Column} from '../components/ui';
 import {GlobalContext} from '../shared/GlobalContext';
 import {ScanEvents} from '../machines/bleShare/scan/scanMachine';
 import testIDProps from '../shared/commonUtil';
+import {SvgImage} from '../components/ui/svg';
+
 const {Navigator, Screen} = createBottomTabNavigator();
 
 export const MainLayout: React.FC<
@@ -36,7 +33,7 @@ export const MainLayout: React.FC<
       initialRouteName={mainRoutes[0].name}
       screenOptions={({route}) => ({
         tabBarAccessibilityLabel: route.name,
-        ...options
+        ...options,
       })}>
       {mainRoutes.map(route => (
         <Screen
@@ -45,7 +42,7 @@ export const MainLayout: React.FC<
           component={route.component}
           listeners={{
             tabPress: e => {
-              if (route.name == scan.name) {
+              if (route.name == share.name) {
                 scanService.send(ScanEvents.RESET());
               }
             },
@@ -54,12 +51,13 @@ export const MainLayout: React.FC<
             ...route.options,
             title: t(route.name),
             tabBarIcon: ({focused}) => (
-              <Icon
+              <Column
                 {...testIDProps(route.name + 'Icon')}
-                name={route.icon}
-                color={focused ? Theme.Colors.Icon : Theme.Colors.GrayIcon}
-                style={focused ? Theme.Styles.bottomTabIconStyle : null}
-              />
+                align="center"
+                crossAlign="center"
+                style={focused ? Theme.Styles.bottomTabIconStyle : null}>
+                {SvgImage[`${route.name}`](focused)}
+              </Column>
             ),
           }}
         />

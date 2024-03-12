@@ -7,9 +7,8 @@ import {useTranslation} from 'react-i18next';
 import {RootRouteProps} from '../../routes';
 import {useWelcomeScreen} from '../WelcomeScreenController';
 import LinearGradient from 'react-native-linear-gradient';
-import Constants from 'expo-constants';
-import {isIOS} from '../../shared/constants';
 import {SvgImage} from '../../components/ui/svg';
+import testIDProps from '../../shared/commonUtil';
 
 export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
   const slider = useRef<AppIntroSlider>();
@@ -22,87 +21,80 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
       key: 'one',
       title: t('stepOneTitle'),
       text: t('stepOneText'),
-      image: Theme.protectPrivacy,
+      image: Theme.IntroWelcome,
     },
     {
       key: 'two',
       title: t('stepTwoTitle'),
       text: t('stepTwoText'),
-      image: Theme.walletIntro,
+      image: Theme.SecureSharing,
     },
     {
       key: 'three',
       title: t('stepThreeTitle'),
       text: t('stepThreeText'),
-      image: Theme.sharingIntro,
+      image: Theme.DigitalWallet,
     },
     {
       key: 'four',
       title: t('stepFourTitle'),
       text: t('stepFourText'),
-      image: Theme.IntroScanner,
+      image: Theme.IntroShare,
+    },
+    {
+      key: 'five',
+      title: t('stepFiveTitle'),
+      text: t('stepFiveText'),
+      image: Theme.IntroBackup,
     },
   ];
+
+  const isPasscodeSet = controller.isPasscodeSet();
 
   const renderItem = ({item}) => {
     return (
       <LinearGradient colors={Theme.Colors.gradientBtn}>
         <Centered>
-          <Row crossAlign="center">
-            <Column
-              style={{
-                flex: 3,
-                alignItems: 'flex-end',
-                marginRight: 75,
-              }}>
-              <Column margin="50 0">{SvgImage.InjiSmallLogo()}</Column>
+          <Row align="space-between" style={Theme.Styles.introSliderHeader}>
+            <Column style={{marginLeft: Dimensions.get('screen').width * 0.4}}>
+              {SvgImage.InjiSmallLogo()}
             </Column>
 
-            <Column
-              style={{
-                flex: 1,
-                alignItems: 'flex-end',
-                paddingTop: isIOS() ? Constants.statusBarHeight : 0,
-              }}>
-              {controller.isPasscodeSet() ? (
-                <Button
-                  testID="back"
-                  type="plain"
-                  title={t('back')}
-                  onPress={controller.BACK}
-                  styles={{height: 40, maxWidth: 115}}
-                />
-              ) : (
-                <Button
-                  testID="skip"
-                  type="plain"
-                  title={t('skip')}
-                  onPress={controller.NEXT}
-                  styles={{height: 40, width: 115}}
-                />
-              )}
-            </Column>
+            {item.key !== 'five' && (
+              <Button
+                testID={
+                  isPasscodeSet
+                    ? `backButton-${item.key}`
+                    : `skipButton-${item.key}`
+                }
+                type="plain"
+                title={isPasscodeSet ? t('back') : t('skip')}
+                onPress={isPasscodeSet ? controller.BACK : controller.NEXT}
+                styles={{height: 40, maxWidth: 115}}
+              />
+            )}
           </Row>
           <Image
+            {...testIDProps(`introImage-${item.key}`)}
             source={item.image}
             resizeMode="contain"
             style={{height: Dimensions.get('screen').height * 0.6}}
           />
           <Column
-            testID="introSlide"
+            testID={`introSlide-${item.key}`}
             style={Theme.OnboardingOverlayStyles.bottomContainer}
             crossAlign="center"
             backgroundColor={Theme.Colors.whiteText}
             width={Dimensions.get('screen').width}>
             <Text
-              testID="introTitle"
+              testID={`introTitle-${item.key}`}
               style={{paddingTop: 3}}
               weight="semibold"
               margin="0 0 18 0">
               {item.title}
             </Text>
             <Text
-              testID="introText"
+              testID={`introText-${item.key}`}
               style={{paddingTop: 7}}
               margin="0 0 150 0"
               size="large"
@@ -117,10 +109,10 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
 
   const renderNextButton = () => {
     return (
-      <View>
+      <View {...testIDProps('nextButton')}>
         <LinearGradient
           colors={Theme.Colors.gradientBtn}
-          style={{borderRadius: 10, height: 50, marginTop: -10}}>
+          style={Theme.Styles.introSliderButton}>
           <Text
             testID="next"
             style={{paddingTop: 3}}
@@ -139,9 +131,9 @@ export const IntroSlidersScreen: React.FC<RootRouteProps> = props => {
       <View>
         <LinearGradient
           colors={Theme.Colors.gradientBtn}
-          style={{borderRadius: 10, height: 50, marginTop: -10}}>
+          style={Theme.Styles.introSliderButton}>
           <Text
-            testID="getStarted"
+            testID={controller.isPasscodeSet() ? 'goBack' : 'getStarted'}
             style={{paddingTop: 3}}
             weight="semibold"
             align="center"

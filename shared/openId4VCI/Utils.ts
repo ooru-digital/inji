@@ -3,21 +3,63 @@ import jose from 'node-jose';
 import {isIOS} from '../constants';
 import pem2jwk from 'simple-pem2jwk';
 import {displayType, issuerType} from '../../machines/issuersMachine';
-import getAllConfigurations from '../commonprops/commonProps';
-import {CredentialWrapper} from '../../types/VC/EsignetMosipVC/vc';
-import {VCMetadata} from '../VCMetadata';
+import getAllConfigurations from '../api';
+
 import i18next from 'i18next';
 import {getJWT} from '../cryptoutil/cryptoUtil';
+import {CACHED_API} from '../api';
+import i18n from '../../i18n';
+import {VerifiableCredential} from '../../types/VC/ExistingMosipVC/vc';
+import {CredentialWrapper} from '../../types/VC/EsignetMosipVC/vc';
 
 export const Protocols = {
   OpenId4VCI: 'OpenId4VCI',
   OTP: 'OTP',
 };
 
+export const Issuers = {
+  Mosip: '',
+  Sunbird: 'Sunbird',
+  ESignet: 'ESignet',
+};
+
+/**
+ * @param issuer of the VC as per the VC metadata in MMKV
+ * @returns the ID-type to be used for further translation
+ *
+ * NOTE: This might be replaced by a more standards compliant way later.
+ */
+export function getIdType(issuer: string | undefined): string {
+  if (issuer === '' || issuer === Issuers.ESignet) {
+    return 'nationalCard';
+  }
+  return 'insuranceCard';
+}
+
+export const ID_TYPE = {
+  MOSIPVerifiableCredential: i18n.t('VcDetails:nationalCard'),
+  InsuranceCredential: i18n.t('VcDetails:insuranceCard'),
+  OpenG2PBeneficiaryVerifiableCredential: i18n.t('VcDetails:beneficiaryCard'),
+  OpenG2PRegistryVerifiableCredential: i18n.t('VcDetails:socialRegistryCard'),
+};
+
+export const getIDType = (verifiableCredential: VerifiableCredential) => {
+  return ID_TYPE[verifiableCredential.type[1]];
+};
+
+export const ACTIVATION_NEEDED = [Issuers.ESignet, Issuers.Mosip];
+
+export const isActivationNeeded = (issuer: string) => {
+  return ACTIVATION_NEEDED.indexOf(issuer) !== -1;
+};
+
 export const Issuers_Key_Ref = 'OpenId4VCI_KeyPair';
 
 export const getIdentifier = (context, credential) => {
-  const credId = credential.credential.id.split('/');
+  const credentialIdentifier = credential.credential.id;
+  const credId = credentialIdentifier.startsWith('did')
+    ? credentialIdentifier.split(':')
+    : credentialIdentifier.split('/');
   return (
     context.selectedIssuer.credential_issuer +
     ':' +
@@ -37,7 +79,7 @@ export const getBody = async context => {
   const payload = {
     iss: context.selectedIssuer.client_id,
     nonce: decodedToken.c_nonce,
-    aud: 'http://localhost:8088',
+    aud: context.selectedIssuer.credential_audience,
     iat: Math.floor(new Date().getTime() / 1000),
     exp: Math.floor(new Date().getTime() / 1000) + 18000,
   };
@@ -52,7 +94,9 @@ export const getBody = async context => {
     format: 'ldp_vc',
     credential_definition: {
       '@context': ['https://www.w3.org/2018/credentials/v1'],
-      type: ['VerifiableCredential', 'SampleVerifiableCredential'],
+      type: context.selectedIssuer?.credential_type
+        ? context.selectedIssuer.credential_type
+        : ['VerifiableCredential', 'SampleVerifiableCredential'],
     },
     proof: {
       proof_type: 'jwt',
@@ -66,6 +110,10 @@ export const updateCredentialInformation = (context, credential) => {
   credentialWrapper.verifiableCredential = credential;
   credentialWrapper.identifier = getIdentifier(context, credential);
   credentialWrapper.generatedOn = new Date();
+  credentialWrapper.verifiableCredential.wellKnown =
+    context.selectedIssuer['.well-known'];
+  // credentialWrapper.verifiableCredential.wellKnown =
+  //   'https://esignet.collab.mosip.net/.well-known/openid-credential-issuer';
   credentialWrapper.verifiableCredential.issuerLogo =
     getDisplayObjectForCurrentLanguage(context.selectedIssuer.display)?.logo;
   return credentialWrapper;
@@ -82,19 +130,6 @@ export const getDisplayObjectForCurrentLanguage = (
   return displayType;
 };
 
-export const getVCMetadata = context => {
-  const [issuer, protocol, requestId] =
-    context.credentialWrapper?.identifier.split(':');
-  return VCMetadata.fromVC({
-    requestId: requestId ? requestId : null,
-    issuer: issuer,
-    protocol: protocol,
-    id: context.verifiableCredential?.credential.credentialSubject.UIN
-      ? context.verifiableCredential?.credential.credentialSubject.UIN
-      : context.verifiableCredential?.credential.credentialSubject.VID,
-  });
-};
-
 export const constructAuthorizationConfiguration = (
   selectedIssuer: issuerType,
 ) => {
@@ -102,8 +137,6 @@ export const constructAuthorizationConfiguration = (
     clientId: selectedIssuer.client_id,
     scopes: selectedIssuer.scopes_supported,
     additionalHeaders: selectedIssuer.additional_headers,
-    wellKnownEndpoint: selectedIssuer['.well-known'],
-    dangerouslyAllowInsecureHttpRequests: true,
     redirectUrl: selectedIssuer.redirect_uri,
     serviceConfiguration: {
       authorizationEndpoint: selectedIssuer.authorization_endpoint,
@@ -137,6 +170,33 @@ export const getJWK = async publicKey => {
   }
 };
 
+export const getCredentialIssuersWellKnownConfig = async (
+  issuer: string,
+  wellknown: string,
+  defaultFields: string[],
+) => {
+  let fields: string[] = defaultFields;
+  let response = null;
+  if (wellknown) {
+    response = await CACHED_API.fetchIssuerWellknownConfig(issuer, wellknown);
+    if (!response) {
+      fields = [];
+    } else if (response?.credentials_supported[0].order) {
+      fields = response?.credentials_supported[0].order;
+    } else {
+      fields = Object.keys(
+        response?.credentials_supported[0].credential_definition
+          .credentialSubject,
+      );
+      console.log('fields => ', fields);
+    }
+  }
+  return {
+    wellknown: response,
+    fields: fields,
+  };
+};
+
 export const vcDownloadTimeout = async (): Promise<number> => {
   const response = await getAllConfigurations();
 
@@ -151,6 +211,7 @@ export enum OIDCErrors {
   INVALID_TOKEN_SPECIFIED = 'Invalid token specified',
   OIDC_CONFIG_ERROR_PREFIX = 'Config error',
 }
+
 // ErrorMessage is the type of error message shown in the UI
 export enum ErrorMessage {
   NO_INTERNET = 'noInternetConnection',
