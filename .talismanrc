@@ -65,6 +65,8 @@ fileignoreconfig:
     checksum: a4e3772dc67a07ecbcfc58be0d6d4f7fa799cec7ac25bd269ac29459c8669ca4
   - filename: machines/bleShare/scan/scanMachine.ts
     checksum: a514c958ca3da3c5b22a1a95ad680af8f05fb22638fab79b3842aa8fcc1b4a17
+  - filename: locales/spa.json
+    checksum: eac9685c6b205ece5759e414669d27ad7ce383453d7b5e7d9f5ce75d290cc860
   - filename: screens/PasscodeScreen.tsx
     checksum: 5d3003027b245234f8c00bfc98836f1fb90a5d9525ffacf61c53f3d50954aa6a
   - filename: screens/PasscodeScreen.tsx
@@ -167,7 +169,7 @@ fileignoreconfig:
   - filename: components/BannerNotificationContainer.tsx
     checksum: a98ff1a0dd96d3ead4b8191320be8b0c7a558cda6b0de39f1c62aaa8efef9fb8
   - filename: components/HelpScreen.tsx
-    checksum: bbc69143bd37d065bba3800396301db5a0318e8b7ba51ecd49142dda68783a01  
+    checksum: bbc69143bd37d065bba3800396301db5a0318e8b7ba51ecd49142dda68783a01
   - filename: machines/backupRestore.ts
     checksum: bbc69143bd37d065bba3800396301db5a0318e8b7ba51ecd49142dda68783a01
   - filename: injitest/README.md
@@ -213,13 +215,15 @@ fileignoreconfig:
     checksum: 86afecb1f8eb02b4446f94a092eca7f6e65310cc4ec5ccf89cd01ccb13a0749e
   - filename: injitest/src/test/java/iosTestCases/ChangeLanguageTest.java
     checksum: d94cbf47726c3650b4b623e6aa76e113edf553616319450d01f05294163572e9
-    - filename: screens/Home/MyVcs/IdInputModal.tsx
-    checksum: c18e8bbcf1c8de3327c0920fddcf1b6df54b74d894e3f04677f498712c680fe9  
+  - filename: screens/Home/MyVcs/IdInputModal.tsx
+    checksum: c18e8bbcf1c8de3327c0920fddcf1b6df54b74d894e3f04677f498712c680fe9
   - filename: screens/Home/MyVcs/OtpVerificationModal.tsx
-    checksum: c42e2387dfc2cc637033ae849d8b2c2fc30cabaeb77e074661cf466a8476e947  
+    checksum: c42e2387dfc2cc637033ae849d8b2c2fc30cabaeb77e074661cf466a8476e947
   - filename: shared/commonUtil.ts
-    checksum: f98c2c6a9add155155d11b231b2c5db18eb0b4570990990c8300e621609e2c78 
+    checksum: f98c2c6a9add155155d11b231b2c5db18eb0b4570990990c8300e621609e2c78
   - filename: screens/Home/MyVcs/GetIdInputModal.tsx
-    checksum: 1a15e4327b358ffee8bddfe412a38873ad6d4414d2b1d6bffd3c1782f5ec852f  
-  version: ""
-
+    checksum: 1a15e4327b358ffee8bddfe412a38873ad6d4414d2b1d6bffd3c1782f5ec852f
+  - filename: .env
+    checksum: c09f4a095c60c4796a0bdf95c3674b0c1979ef60b1c661693c6621dd0e0afffc
+  - filename: components/ui/svg.tsx
+    checksum: 0f517c1530ef861d419b296f0789c69adabb4019c3a77f14260f106ffbdfc196

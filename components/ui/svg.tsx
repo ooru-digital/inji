@@ -1,6 +1,7 @@
 import React from 'react';
 import Svg, {Image} from 'react-native-svg';
 import {Theme} from './styleUtils';
+import {Icon} from 'react-native-elements';
 import {ImageBackground} from 'react-native';
 import Home from '../../assets/Home_tab_icon.svg';
 import History from '../../assets/History_tab_icon.svg';
@@ -14,7 +15,7 @@ import ReceiveCard from '../../assets/Receive_Card.svg';
 import ReceivedCards from '../../assets/Received_Cards.svg';
 import ProgressIcon from '../../assets/Progress_Icon1.svg';
 import testIDProps from '../../shared/commonUtil';
-import Logo from '../../assets/Mosip_Logo1.svg';
+import Logo from '../../assets/Vector.svg';
 import WarningLogo from '../../assets/Warning_Icon.svg';
 import OtpVerificationIcon from '../../assets/Otp_Verification_Icon.svg';
 import FlipCameraIcon from '../../assets/Flip_Camera_Icon.svg';

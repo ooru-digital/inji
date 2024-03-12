@@ -96,7 +96,7 @@ export const getBody = async context => {
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: context.selectedIssuer?.credential_type
         ? context.selectedIssuer.credential_type
-        : ['VerifiableCredential', 'MOSIPVerifiableCredential'],
+        : ['VerifiableCredential', 'SampleVerifiableCredential'],
     },
     proof: {
       proof_type: 'jwt',

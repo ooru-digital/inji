@@ -34,7 +34,7 @@ function faceImageSource(
   verifiableCredential: VerifiableCredential,
 ) {
   return props?.vcMetadata?.isFromOpenId4VCI()
-    ? verifiableCredential?.credentialSubject?.face
+    ? verifiableCredential?.credentialSubject?.face?.[0]?.url
     : props?.context?.credential?.biometrics?.face;
 }
 
