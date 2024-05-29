@@ -13,15 +13,18 @@ import {
 import {createModel} from 'xstate/lib/model';
 import {EmitterSubscription, Linking} from 'react-native';
 import {DeviceInfo} from '../../../components/DeviceInfoList';
-import {getDeviceNameSync} from 'react-native-device-info';
-import {VC, VerifiablePresentation} from '../../../types/VC/ExistingMosipVC/vc';
+import {getDeviceNameSync, isLocationEnabled} from 'react-native-device-info';
+import {VC} from '../../VerifiableCredential/VCMetaMachine/vc';
 import {AppServices} from '../../../shared/GlobalContext';
 import {ActivityLogEvents, ActivityLogType} from '../../activityLog';
 import {
   androidVersion,
+  DEFAULT_QR_HEADER,
+  FACE_AUTH_CONSENT,
   isAndroid,
   isIOS,
   MY_LOGIN_STORE_KEY,
+  MY_VCS_STORE_KEY,
 } from '../../../shared/constants';
 import {subscribe} from '../../../shared/openIdBLE/walletEventHandler';
 import {
@@ -34,11 +37,9 @@ import {
 } from 'react-native-permissions';
 import {
   checkLocationPermissionStatus,
-  checkLocationService,
   requestLocationPermission,
 } from '../../../shared/location';
 import {CameraCapturedPicture} from 'expo-camera';
-import {log} from 'xstate/lib/actions';
 import {createQrLoginMachine, qrLoginMachine} from '../../QrLoginMachine';
 import {StoreEvents} from '../../store';
 import {WalletDataEvent} from '@mosip/tuvali/lib/typescript/types/events';
@@ -57,7 +58,11 @@ import {
 } from '../../../shared/telemetry/TelemetryUtils';
 import {TelemetryConstants} from '../../../shared/telemetry/TelemetryConstants';
 import {logState} from '../../../shared/commonUtil';
+import {VCShareFlowType} from '../../../shared/Utils';
 import {getIdType} from '../../../shared/openId4VCI/Utils';
+import {VcMetaEvents} from '../../VerifiableCredential/VCMetaMachine/VCMetaMachine';
+// @ts-ignore
+import {decodeData} from '@mosip/pixelpass';
 
 const {wallet, EventTypes, VerificationStatus} = tuvali;
 
@@ -68,20 +73,23 @@ const model = createModel(
     receiverInfo: {} as DeviceInfo,
     selectedVc: {} as VC,
     bleError: {} as BLEError,
-    createdVp: null as VC,
     loggers: [] as EmitterSubscription[],
     vcName: '',
+    flowType: VCShareFlowType.SIMPLE_SHARE,
     verificationImage: {} as CameraCapturedPicture,
     openId4VpUri: '',
     shareLogType: '' as ActivityLogType,
     QrLoginRef: {} as ActorRefFrom<typeof qrLoginMachine>,
+    showQuickShareSuccessBanner: false,
     linkCode: '',
+    quickShareData: {},
+    showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
     showFaceCaptureSuccessBanner: false,
   },
   {
     events: {
-      SELECT_VC: (vc: VC) => ({vc}),
+      SELECT_VC: (vc: VC, flowType: string) => ({vc, flowType}),
       SCAN: (params: string) => ({params}),
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
@@ -93,6 +101,7 @@ const model = createModel(
       STAY_IN_PROGRESS: () => ({}),
       RETRY: () => ({}),
       DISMISS: () => ({}),
+      DISMISS_QUICK_SHARE_BANNER: () => ({}),
       GOTO_HISTORY: () => ({}),
       CONNECTED: () => ({}),
       DISCONNECT: () => ({}),
@@ -111,15 +120,19 @@ const model = createModel(
       LOCATION_ENABLED: () => ({}),
       LOCATION_DISABLED: () => ({}),
       LOCATION_REQUEST: () => ({}),
+      CHECK_FLOW_TYPE: () => ({}),
       UPDATE_VC_NAME: (vcName: string) => ({vcName}),
       STORE_RESPONSE: (response: any) => ({response}),
       APP_ACTIVE: () => ({}),
       FACE_VALID: () => ({}),
       FACE_INVALID: () => ({}),
       RETRY_VERIFICATION: () => ({}),
-      VP_CREATED: (vp: VerifiablePresentation) => ({vp}),
-      TOGGLE_USER_CONSENT: () => ({}),
       RESET: () => ({}),
+      FACE_VERIFICATION_CONSENT: (isConsentGiven: boolean) => ({
+        isConsentGiven,
+      }),
+      ALLOWED: () => ({}),
+      DENIED: () => ({}),
     },
   },
 );
@@ -136,11 +149,6 @@ export const scanMachine =
       schema: {
         context: model.initialContext,
         events: {} as EventFrom<typeof model>,
-        services: {} as {
-          createVp: {
-            data: VC;
-          };
-        },
       },
       invoke: {
         src: 'monitorConnection',
@@ -164,10 +172,18 @@ export const scanMachine =
         DISMISS: {
           target: '#scan.reviewing.disconnect',
         },
+        SELECT_VC: {
+          actions: ['setSelectedVc', 'setFlowType'],
+          target: '.checkStorage',
+        },
+        DISMISS_QUICK_SHARE_BANNER: {
+          actions: 'resetShowQuickShareSuccessBanner',
+          target: '.inactive',
+        },
       },
       states: {
         inactive: {
-          entry: 'removeLoggers',
+          entry: ['removeLoggers', 'resetFlowType', 'resetSelectedVc'],
         },
         disconnectDevice: {
           invoke: {
@@ -194,6 +210,7 @@ export const scanMachine =
           },
         },
         restrictSharingVc: {},
+
         startPermissionCheck: {
           on: {
             START_PERMISSION_CHECK: [
@@ -383,16 +400,24 @@ export const scanMachine =
           },
           on: {
             DISCONNECT: {
-              target: '#scan.findingConnection',
-              actions: [],
+              target: '#scan.checkFaceAuthConsent',
               internal: false,
             },
           },
           after: {
             DESTROY_TIMEOUT: {
-              target: '#scan.findingConnection',
+              target: '#scan.checkFaceAuthConsent',
               actions: [],
               internal: false,
+            },
+          },
+        },
+        checkFaceAuthConsent: {
+          entry: 'getFaceAuthConsent',
+          on: {
+            STORE_RESPONSE: {
+              actions: 'updateShowFaceAuthConsent',
+              target: '#scan.findingConnection',
             },
           },
         },
@@ -416,19 +441,48 @@ export const scanMachine =
                 actions: ['sendVcSharingStartEvent', 'setLinkCode'],
               },
               {
+                target: 'decodeQuickShareData',
+                cond: 'isQuickShare',
+                actions: 'setQuickShareData',
+              },
+              {
                 target: 'invalid',
               },
             ],
+          },
+        },
+        decodeQuickShareData: {
+          entry: 'loadMetaDataToMemory',
+          on: {
+            STORE_RESPONSE: {
+              target: 'loadVCS',
+            },
+          },
+        },
+        loadVCS: {
+          entry: 'loadVCDataToMemory',
+          on: {
+            STORE_RESPONSE: {
+              actions: ['refreshVCs', 'setShowQuickShareSuccessBanner'],
+              target: '.navigatingToHome',
+            },
+          },
+          initial: 'idle',
+          states: {
+            idle: {},
+            navigatingToHome: {},
           },
         },
         showQrLogin: {
           invoke: {
             id: 'QrLogin',
             src: qrLoginMachine,
-            onDone: '.storing',
+            onDone: {
+              target: '.storing',
+            },
           },
           on: {
-            DISMISS: 'findingConnection',
+            DISMISS: '#scan.checkFaceAuthConsent',
           },
           initial: 'idle',
           states: {
@@ -493,21 +547,44 @@ export const scanMachine =
           },
         },
         reviewing: {
-          entry: ['resetShouldVerifyPresence'],
-          exit: ['clearCreatedVp'],
-          initial: 'selectingVc',
+          initial: 'idle',
+          entry: [send('CHECK_FLOW_TYPE')],
+          on: {
+            CHECK_FLOW_TYPE: [
+              {
+                cond: 'isFlowTypeSimpleShare',
+                target: '.selectingVc',
+              },
+              {
+                cond: 'isFlowTypeMiniViewShare',
+                target: '.sendingVc',
+                actions: 'setShareLogTypeUnverified',
+              },
+              {
+                cond: 'isFlowTypeMiniViewShareWithSelfie',
+                target: '.verifyingIdentity',
+              },
+            ],
+          },
           states: {
+            idle: {},
             selectingVc: {
               on: {
                 DISCONNECT: {
                   target: '#scan.disconnected',
                 },
                 SELECT_VC: {
-                  actions: 'setSelectedVc',
+                  actions: ['setSelectedVc', 'setFlowType'],
                 },
-                VERIFY_AND_ACCEPT_REQUEST: {
-                  target: 'verifyingIdentity',
-                },
+                VERIFY_AND_ACCEPT_REQUEST: [
+                  {
+                    cond: 'showFaceAuthConsentScreen',
+                    target: 'faceVerificationConsent',
+                  },
+                  {
+                    target: 'verifyingIdentity',
+                  },
+                ],
                 ACCEPT_REQUEST: {
                   target: 'sendingVc',
                   actions: [
@@ -518,9 +595,6 @@ export const scanMachine =
                 CANCEL: {
                   target: 'cancelling',
                   actions: 'sendVCShareFlowCancelEndEvent',
-                },
-                TOGGLE_USER_CONSENT: {
-                  actions: 'toggleShouldVerifyPresence',
                 },
               },
             },
@@ -614,12 +688,33 @@ export const scanMachine =
               },
             },
             disconnect: {
-              //Renamed this to disconnect from navigateToHome as we are disconnecting the devices.
+              entry: [
+                'resetFlowType',
+                'resetSelectedVc',
+                'resetShowQuickShareSuccessBanner',
+              ],
               invoke: {
                 src: 'disconnect',
               },
             },
-            navigateToHistory: {},
+            navigateToHistory: {
+              entry: ['resetFlowType', 'resetSelectedVc'],
+              always: '#scan.disconnected',
+            },
+            faceVerificationConsent: {
+              on: {
+                FACE_VERIFICATION_CONSENT: {
+                  actions: [
+                    'setShowFaceAuthConsent',
+                    'storeShowFaceAuthConsent',
+                  ],
+                  target: 'verifyingIdentity',
+                },
+                DISMISS: {
+                  target: '#scan.reviewing.selectingVc',
+                },
+              },
+            },
             verifyingIdentity: {
               on: {
                 FACE_VALID: {
@@ -633,33 +728,29 @@ export const scanMachine =
                   target: 'invalidIdentity',
                   actions: 'logFailedVerification',
                 },
-                CANCEL: {
-                  target: 'selectingVc',
-                },
-              },
-            },
-            creatingVp: {
-              invoke: {
-                src: 'createVp',
-                onDone: [
+                CANCEL: [
                   {
-                    target: 'sendingVc',
-                    actions: 'setCreatedVp',
-                  },
-                ],
-                onError: [
-                  {
+                    cond: 'isFlowTypeSimpleShare',
                     target: 'selectingVc',
-                    actions: log('Could not create Verifiable Presentation'),
+                  },
+                  {
+                    target: 'cancelling',
                   },
                 ],
               },
             },
+
             invalidIdentity: {
               on: {
-                DISMISS: {
-                  target: 'selectingVc',
-                },
+                DISMISS: [
+                  {
+                    cond: 'isFlowTypeSimpleShare',
+                    target: 'selectingVc',
+                  },
+                  {
+                    target: 'cancelling',
+                  },
+                ],
                 RETRY_VERIFICATION: {
                   target: 'verifyingIdentity',
                 },
@@ -706,6 +797,19 @@ export const scanMachine =
                   target: 'checkingPermissionStatus',
                 },
                 LOCATION_DISABLED: {
+                  target: 'LocationPermissionRationale',
+                },
+              },
+            },
+            LocationPermissionRationale: {
+              on: {
+                APP_ACTIVE: {
+                  target: 'checkLocationService',
+                },
+                ALLOWED: {
+                  actions: 'enableLocation',
+                },
+                DENIED: {
                   target: 'disabled',
                 },
               },
@@ -738,9 +842,6 @@ export const scanMachine =
             },
             denied: {
               on: {
-                APP_ACTIVE: {
-                  target: 'checkingPermissionStatus',
-                },
                 LOCATION_REQUEST: {
                   actions: 'openAppPermission',
                 },
@@ -750,6 +851,7 @@ export const scanMachine =
               on: {
                 LOCATION_REQUEST: {
                   target: 'checkLocationService',
+                  actions: 'enableLocation',
                 },
               },
             },
@@ -770,11 +872,39 @@ export const scanMachine =
           },
         }),
 
+        updateShowFaceAuthConsent: model.assign({
+          showFaceAuthConsent: (_, event) => {
+            return event.response || event.response === null;
+          },
+        }),
+
+        setShowFaceAuthConsent: model.assign({
+          showFaceAuthConsent: (_, event) => {
+            return !event.isConsentGiven;
+          },
+        }),
+
+        getFaceAuthConsent: send(StoreEvents.GET(FACE_AUTH_CONSENT), {
+          to: context => context.serviceRefs.store,
+        }),
+
+        storeShowFaceAuthConsent: send(
+          (context, event) =>
+            StoreEvents.SET(FACE_AUTH_CONSENT, !event.isConsentGiven),
+          {
+            to: context => context.serviceRefs.store,
+          },
+        ),
+
         sendScanData: context =>
           context.QrLoginRef.send({
             type: 'GET',
-            value: context.linkCode,
+            linkCode: context.linkCode,
+            flowType: context.flowType,
+            selectedVc: context.selectedVc,
+            faceAuthConsentGiven: context.showFaceAuthConsent,
           }),
+
         openBluetoothSettings: () => {
           isAndroid()
             ? BluetoothStateManager.openSettings().catch()
@@ -782,6 +912,10 @@ export const scanMachine =
         },
 
         openAppPermission: () => Linking.openSettings(),
+
+        enableLocation: async () => {
+          await Linking.sendIntent('android.settings.LOCATION_SOURCE_SETTINGS');
+        },
 
         setUri: model.assign({
           openId4VpUri: (_context, event) => event.params,
@@ -812,20 +946,27 @@ export const scanMachine =
         }),
 
         setSelectedVc: assign({
-          selectedVc: (context, event) => {
-            return {
-              ...event.vc,
-              shouldVerifyPresence: context.selectedVc.shouldVerifyPresence,
-            };
-          },
+          selectedVc: (_context, event) => event.vc,
         }),
 
-        setCreatedVp: assign({
-          createdVp: (_context, event) => event.data,
+        resetSelectedVc: assign({
+          selectedVc: {},
         }),
 
-        clearCreatedVp: assign({
-          createdVp: () => null,
+        resetShowQuickShareSuccessBanner: assign({
+          showQuickShareSuccessBanner: false,
+        }),
+
+        setShowQuickShareSuccessBanner: assign({
+          showQuickShareSuccessBanner: true,
+        }),
+
+        setFlowType: assign({
+          flowType: (_context, event) => event.flowType,
+        }),
+
+        resetFlowType: assign({
+          flowType: VCShareFlowType.SIMPLE_SHARE,
         }),
 
         registerLoggers: assign({
@@ -874,9 +1015,9 @@ export const scanMachine =
             const vcMetadata = context.selectedVc?.vcMetadata;
             return ActivityLogEvents.LOG_ACTIVITY({
               _vcKey: VCMetadata.fromVC(vcMetadata).getVcKey(),
-              type: context.selectedVc.shouldVerifyPresence
-                ? 'VC_SHARED_WITH_VERIFICATION_CONSENT'
-                : context.shareLogType,
+              type: context.shareLogType
+                ? context.shareLogType
+                : 'VC_SHARED_WITH_VERIFICATION_CONSENT',
               id: vcMetadata.id,
               idType: getIdType(vcMetadata.issuer),
               timestamp: Date.now(),
@@ -894,34 +1035,47 @@ export const scanMachine =
               _vcKey: VCMetadata.fromVC(context.selectedVc).getVcKey(),
               type: 'PRESENCE_VERIFICATION_FAILED',
               timestamp: Date.now(),
-              idType: getIdType(context.selectedVc.issuer),
-              id: context.selectedVc.id,
+              idType: getIdType(context.selectedVc.vcMetadata.issuer),
+              id: context.selectedVc.vcMetadata.id,
               deviceName:
                 context.receiverInfo.name || context.receiverInfo.deviceName,
-              vcLabel: context.selectedVc.id,
+              vcLabel: context.selectedVc.vcMetadata.id,
             }),
           {to: context => context.serviceRefs.activityLog},
         ),
-
-        toggleShouldVerifyPresence: assign({
-          selectedVc: context => ({
-            ...context.selectedVc,
-            shouldVerifyPresence: !context.selectedVc.shouldVerifyPresence,
-          }),
-        }),
 
         setLinkCode: assign({
           linkCode: (_, event) =>
             new URL(event.params).searchParams.get('linkCode'),
         }),
-
-        resetShouldVerifyPresence: assign({
-          selectedVc: context => ({
-            ...context.selectedVc,
-            shouldVerifyPresence: false,
-          }),
+        setQuickShareData: assign({
+          quickShareData: (_, event) =>
+            JSON.parse(decodeData(event.params.split(DEFAULT_QR_HEADER)[1])),
         }),
+        loadMetaDataToMemory: send(
+          context => {
+            let metadata = VCMetadata.fromVC(context.quickShareData?.meta);
+            return StoreEvents.PREPEND(MY_VCS_STORE_KEY, metadata);
+          },
+          {to: context => context.serviceRefs.store},
+        ),
+        loadVCDataToMemory: send(
+          context => {
+            let metadata = VCMetadata.fromVC(context.quickShareData?.meta);
 
+            let verifiableCredential = metadata.isFromOpenId4VCI()
+              ? {credential: context.quickShareData?.verifiableCredential}
+              : context.quickShareData?.verifiableCredential;
+
+            return StoreEvents.SET(metadata.getVcKey(), {
+              verifiableCredential: verifiableCredential,
+            });
+          },
+          {to: context => context.serviceRefs.store},
+        ),
+        refreshVCs: send(VcMetaEvents.REFRESH_MY_VCS, {
+          to: context => context.serviceRefs.vcMeta,
+        }),
         storeLoginItem: send(
           (_context, event) => {
             return StoreEvents.PREPEND(
@@ -1072,7 +1226,7 @@ export const scanMachine =
                 type: 'BLE_ERROR',
                 bleError: {message: event.message, code: event.code},
               });
-              console.log('BLE Exception: ' + event.message);
+              console.error('BLE Exception: ' + event.message);
             }
           });
 
@@ -1129,11 +1283,14 @@ export const scanMachine =
             () => callback(model.events.LOCATION_DISABLED()),
           );
         },
-        checkLocationStatus: () => callback => {
-          return checkLocationService(
-            () => callback(model.events.LOCATION_ENABLED()),
-            () => callback(model.events.LOCATION_DISABLED()),
-          );
+
+        checkLocationStatus: () => async callback => {
+          const isEnabled: boolean = await isLocationEnabled();
+          if (isEnabled) {
+            callback(model.events.LOCATION_ENABLED());
+          } else {
+            callback(model.events.LOCATION_DISABLED());
+          }
         },
 
         startConnection: context => callback => {
@@ -1149,11 +1306,6 @@ export const scanMachine =
         },
 
         sendVc: context => callback => {
-          const vp = context.createdVp;
-          const vc = {
-            ...(vp != null ? vp : context.selectedVc),
-          };
-
           const statusCallback = (event: WalletDataEvent) => {
             if (event.type === EventTypes.onDataSent) {
               callback({type: 'VC_SENT'});
@@ -1168,7 +1320,7 @@ export const scanMachine =
           };
           wallet.sendData(
             JSON.stringify({
-              ...vc,
+              ...context.selectedVc,
             }),
           );
           const subscription = subscribe(statusCallback);
@@ -1183,25 +1335,6 @@ export const scanMachine =
           }
         },
 
-        createVp: context => async () => {
-          // const verifiablePresentation = await createVerifiablePresentation(...);
-
-          const verifiablePresentation: VerifiablePresentation = {
-            '@context': [''],
-            proof: null,
-            type: 'VerifiablePresentation',
-            verifiableCredential: [context.selectedVc.verifiableCredential],
-          };
-
-          const vc: VC = {
-            ...context.selectedVc,
-            verifiableCredential: null,
-            verifiablePresentation,
-          };
-
-          return Promise.resolve(vc);
-        },
-
         checkStorageAvailability: () => async () => {
           return Promise.resolve(
             Storage.isMinimumLimitReached('minStorageRequiredForAuditEntry'),
@@ -1210,10 +1343,19 @@ export const scanMachine =
       },
 
       guards: {
+        showFaceAuthConsentScreen: context => {
+          return context.showFaceAuthConsent;
+        },
+
         // sample: 'OPENID4VP://connect:?name=OVPMOSIP&key=69dc92a2cc91f02258aa8094d6e2b62877f5b6498924fbaedaaa46af30abb364'
         isOpenIdQr: (_context, event) =>
           event.params.startsWith('OPENID4VP://'),
-        isQrLogin: (_context, event) => {
+        // sample: 'INJIQUICKSHARE://NAKDFK:DB:JAHDIHAIDJXKABDAJDHUHW'
+        isQuickShare: (_context, event) =>
+          // event.params.startsWith(DEFAULT_QR_HEADER),
+          // toggling the feature for now
+          false,
+        isQrLogin: (context, event) => {
           try {
             let linkCode = new URL(event.params);
             // sample: 'inji://landing-page-name?linkCode=sTjp0XVH3t3dGCU&linkExpireDateTime=2023-11-09T06:56:18.482Z'
@@ -1229,6 +1371,15 @@ export const scanMachine =
 
         isMinimumStorageRequiredForAuditEntryReached: (_context, event) =>
           Boolean(event.data),
+
+        isFlowTypeMiniViewShareWithSelfie: context =>
+          context.flowType === VCShareFlowType.MINI_VIEW_SHARE_WITH_SELFIE,
+
+        isFlowTypeMiniViewShare: context =>
+          context.flowType === VCShareFlowType.MINI_VIEW_SHARE,
+
+        isFlowTypeSimpleShare: context =>
+          context.flowType === VCShareFlowType.SIMPLE_SHARE,
       },
 
       delays: {
@@ -1252,4 +1403,8 @@ export function selectIsMinimumStorageRequiredForAuditEntryLimitReached(
   state: State,
 ) {
   return state.matches('restrictSharingVc');
+}
+
+export function selectIsFaceVerificationConsent(state: State) {
+  return state.matches('reviewing.faceVerificationConsent');
 }

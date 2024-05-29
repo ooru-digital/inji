@@ -1,7 +1,13 @@
 import {StateFrom} from 'xstate';
 import {scanMachine} from './scanMachine';
+import {VCMetadata} from '../../../shared/VCMetadata';
+import {getMosipLogo} from '../../../components/VC/common/VCUtils';
 
 type State = StateFrom<typeof scanMachine>;
+
+export function selectFlowType(state: State) {
+  return state.context.flowType;
+}
 
 export function selectReceiverInfo(state: State) {
   return state.context.receiverInfo;
@@ -11,8 +17,31 @@ export function selectVcName(state: State) {
   return state.context.vcName;
 }
 
-export function selectSelectedVc(state: State) {
-  return state.context.selectedVc;
+export function selectCredential(state: State) {
+  return new VCMetadata(state.context.selectedVc?.vcMetadata).isFromOpenId4VCI()
+    ? state.context.selectedVc?.verifiableCredential?.credential
+    : state.context.selectedVc?.verifiableCredential;
+}
+
+export function selectVerifiableCredentialData(state: State) {
+  const vcMetadata = new VCMetadata(state.context.selectedVc?.vcMetadata);
+  return vcMetadata.isFromOpenId4VCI()
+    ? {
+        vcMetadata: vcMetadata,
+        issuer: vcMetadata.issuer,
+        issuerLogo: state.context.selectedVc?.verifiableCredential?.issuerLogo,
+        wellKnown: state.context.selectedVc?.verifiableCredential?.wellKnown,
+        face: state.context.selectedVc?.verifiableCredential?.credential
+          .credentialSubject?.face,
+        credentialTypes:
+          state.context.selectedVc?.verifiableCredential?.credentialTypes,
+      }
+    : {
+        vcMetadata: vcMetadata,
+        issuer: vcMetadata.issuer,
+        face: state.context.selectedVc?.credential?.biometrics?.face,
+        issuerLogo: getMosipLogo(),
+      };
 }
 
 export function selectQrLoginRef(state: State) {
@@ -23,6 +52,13 @@ export function selectIsScanning(state: State) {
   return state.matches('findingConnection');
 }
 
+export function selectIsQuickShareDone(state: State) {
+  return state.matches('loadVCS.navigatingToHome');
+}
+
+export function selectShowQuickShareSuccessBanner(state: State) {
+  return state.context.showQuickShareSuccessBanner;
+}
 export function selectIsConnecting(state: State) {
   return state.matches('connecting.inProgress');
 }

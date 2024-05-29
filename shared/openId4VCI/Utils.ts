@@ -2,15 +2,20 @@ import jwtDecode from 'jwt-decode';
 import jose from 'node-jose';
 import {isIOS} from '../constants';
 import pem2jwk from 'simple-pem2jwk';
-import {displayType, issuerType} from '../../machines/issuersMachine';
-import getAllConfigurations from '../api';
+import {displayType, issuerType} from '../../machines/Issuers/IssuersMachine';
+import getAllConfigurations, {CACHED_API} from '../api';
 
 import i18next from 'i18next';
 import {getJWT} from '../cryptoutil/cryptoUtil';
-import {CACHED_API} from '../api';
 import i18n from '../../i18n';
-import {VerifiableCredential} from '../../types/VC/ExistingMosipVC/vc';
-import {CredentialWrapper} from '../../types/VC/EsignetMosipVC/vc';
+import {
+  CredentialWrapper,
+  VerifiableCredential,
+} from '../../machines/VerifiableCredential/VCMetaMachine/vc';
+import {
+  BOTTOM_SECTION_FIELDS_WITH_DETAILED_ADDRESS_FIELDS,
+  DETAIL_VIEW_ADD_ON_FIELDS,
+} from '../../components/VC/common/VCUtils';
 
 export const Protocols = {
   OpenId4VCI: 'OpenId4VCI',
@@ -30,7 +35,7 @@ export const Issuers = {
  * NOTE: This might be replaced by a more standards compliant way later.
  */
 export function getIdType(issuer: string | undefined): string {
-  if (issuer === '' || issuer === Issuers.ESignet) {
+  if (issuer === Issuers.Mosip || issuer === Issuers.ESignet) {
     return 'nationalCard';
   }
   return 'insuranceCard';
@@ -94,15 +99,21 @@ export const getBody = async context => {
     format: 'ldp_vc',
     credential_definition: {
       '@context': ['https://www.w3.org/2018/credentials/v1'],
-      type: context.selectedIssuer?.credential_type
-        ? context.selectedIssuer.credential_type
-        : ['VerifiableCredential', 'SampleVerifiableCredential'],
+      type: getCredentialType(context),
     },
     proof: {
       proof_type: 'jwt',
       jwt: proofJWT,
     },
   };
+};
+
+export const getCredentialType = (context: any) => {
+  return context.selectedCredentialType?.credential_definition?.type
+    ? context.selectedCredentialType.credential_definition.type
+    : context.selectedIssuer?.credential_type
+    ? context.selectedIssuer.credential_type
+    : ['VerifiableCredential', 'MOSIPVerifiableCredential'];
 };
 
 export const updateCredentialInformation = (context, credential) => {
@@ -112,10 +123,19 @@ export const updateCredentialInformation = (context, credential) => {
   credentialWrapper.generatedOn = new Date();
   credentialWrapper.verifiableCredential.wellKnown =
     context.selectedIssuer['.well-known'];
-  // credentialWrapper.verifiableCredential.wellKnown =
-  //   'https://esignet.collab.mosip.net/.well-known/openid-credential-issuer';
+  credentialWrapper.verifiableCredential.credentialTypes =
+    context.selectedIssuer['credential_type'];
   credentialWrapper.verifiableCredential.issuerLogo =
     getDisplayObjectForCurrentLanguage(context.selectedIssuer.display)?.logo;
+  credentialWrapper.vcMetadata = context.vcMetadata || {};
+  return credentialWrapper;
+};
+
+export const updateVCmetadataOfCredentialWrapper = (
+  context,
+  credentialWrapper: CredentialWrapper,
+) => {
+  credentialWrapper.vcMetadata = context.vcMetadata;
   return credentialWrapper;
 };
 
@@ -123,19 +143,25 @@ export const getDisplayObjectForCurrentLanguage = (
   display: [displayType],
 ): displayType => {
   const currentLanguage = i18next.language;
-  let displayType = display.filter(obj => obj.language == currentLanguage)[0];
+  const languageKey = Object.keys(display[0]).includes('language')
+    ? 'language'
+    : 'locale';
+  let displayType = display.filter(
+    obj => obj[languageKey] == currentLanguage,
+  )[0];
   if (!displayType) {
-    displayType = display.filter(obj => obj.language == 'en')[0];
+    displayType = display.filter(obj => obj[languageKey] === 'en')[0];
   }
   return displayType;
 };
 
 export const constructAuthorizationConfiguration = (
   selectedIssuer: issuerType,
+  supportedScopes: string,
 ) => {
   return {
     clientId: selectedIssuer.client_id,
-    scopes: selectedIssuer.scopes_supported,
+    scopes: supportedScopes,
     additionalHeaders: selectedIssuer.additional_headers,
     redirectUrl: selectedIssuer.redirect_uri,
     serviceConfiguration: {
@@ -161,7 +187,7 @@ export const getJWK = async publicKey => {
       use: 'sig',
     };
   } catch (e) {
-    console.log(
+    console.error(
       'Exception occured while constructing JWK from PEM : ' +
         publicKey +
         '  Exception is ',
@@ -173,6 +199,7 @@ export const getJWK = async publicKey => {
 export const getCredentialIssuersWellKnownConfig = async (
   issuer: string,
   wellknown: string,
+  credentialTypes: Object[],
   defaultFields: string[],
 ) => {
   let fields: string[] = defaultFields;
@@ -184,17 +211,55 @@ export const getCredentialIssuersWellKnownConfig = async (
     } else if (response?.credentials_supported[0].order) {
       fields = response?.credentials_supported[0].order;
     } else {
-      fields = Object.keys(
-        response?.credentials_supported[0].credential_definition
-          .credentialSubject,
+      const supportedCredentialTypes = credentialTypes.filter(
+        type => type !== 'VerifiableCredential',
       );
-      console.log('fields => ', fields);
+      const selectedCredentialType = supportedCredentialTypes[0];
+
+      response?.credentials_supported.filter(credential => {
+        if (credential.id === selectedCredentialType) {
+          fields = Object.keys(
+            credential.credential_definition.credentialSubject,
+          );
+        }
+      });
     }
   }
   return {
     wellknown: response,
     fields: fields,
   };
+};
+
+export const getDetailedViewFields = async (
+  issuer: string,
+  wellknown: string,
+  credentialTypes: Object[],
+  defaultFields: string[],
+) => {
+  let response = await getCredentialIssuersWellKnownConfig(
+    issuer,
+    wellknown,
+    credentialTypes,
+    defaultFields,
+  );
+
+  let updatedFieldsList = response.fields.concat(DETAIL_VIEW_ADD_ON_FIELDS);
+
+  updatedFieldsList = removeBottomSectionFields(updatedFieldsList);
+
+  return {
+    wellknown: response.wellknown,
+    fields: updatedFieldsList,
+  };
+};
+
+export const removeBottomSectionFields = fields => {
+  return fields.filter(
+    fieldName =>
+      !BOTTOM_SECTION_FIELDS_WITH_DETAILED_ADDRESS_FIELDS.includes(fieldName) &&
+      fieldName !== 'address',
+  );
 };
 
 export const vcDownloadTimeout = async (): Promise<number> => {

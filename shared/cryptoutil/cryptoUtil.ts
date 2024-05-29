@@ -40,7 +40,7 @@ export async function getJWT(
     );
     return header64 + '.' + payLoad64 + '.' + signature64;
   } catch (e) {
-    console.log('Exception Occurred While Constructing JWT ', e);
+    console.error('Exception Occurred While Constructing JWT ', e);
     throw e;
   }
 }
@@ -91,13 +91,6 @@ export function encodeB64(str: string) {
  */
 function isCustomSecureKeystore() {
   return !isIOS() ? SecureKeystore.deviceSupportsHardware() : false;
-}
-
-export interface WalletBindingResponse {
-  walletBindingId: string;
-  keyId: string;
-  thumbprint: string;
-  expireDateTime: string;
 }
 
 export async function encryptJson(

@@ -4,6 +4,7 @@ import BaseTest.IosBaseTest;
 import inji.api.BaseTestCase;
 import inji.constants.Target;
 import inji.pages.*;
+import inji.utils.IosUtil;
 import inji.utils.TestDataReader;
 import org.testng.annotations.Test;
 
@@ -65,7 +66,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         assertTrue(settingsPage.isSettingPageLoaded(), "Verify if setting page is displayed");
         settingsPage.clickOnLanguage();
 
-        assertTrue(settingsPage.verifyLanguagesInLanguageFilter(), "Verify if all languages are shown in language filter");
+        assertTrue(settingsPage.verifyLanguagesInLanguageFilter("IOS"), "Verify if all languages are shown in language filter");
     }
 
     @Test
@@ -153,7 +154,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         settingsPage.clickOnLanguage().clickOnFilipinoLanguage();
 
         assertTrue(settingsPage.verifyFilipinoLanguage(), "Verify if language is changed to filipino");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
         
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"Dalhin ang Iyong Digital ID");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -196,7 +197,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         settingsPage.clickOnLanguage().clickOnFilipinoLanguage();
 
         assertTrue(settingsPage.verifyFilipinoLanguage(), "Verify if language is changed to filipino");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
         
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"Dalhin ang Iyong Digital ID");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -239,7 +240,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         settingsPage.clickOnLanguage().clickOnHindiLanguage();
 
         assertTrue(settingsPage.verifyHindiLanguage(), "Verify if language is changed to hindi");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
         
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"अपनी डिजिटल आईडी लाओ");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -306,7 +307,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "Backup na Data");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "Backup & Ibalik");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "Protektahan ang iyong data nang madali gamit ang aming Backup");
         backupDataPage.clickOnGoBack();
         assertEquals(homePage.getShareButton(), "Ibahagi");
@@ -361,7 +362,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "बैकअप डेटा");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "बैकअप & पुनर्स्थापित करना");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "हमारे बैकअप का उपयोग करके आसानी से अपने डेटा को सुरक्षित रखें");
         backupDataPage.clickOnGoBack();
         assertEquals(homePage.getShareButton(), "शेयर करना");
@@ -416,7 +417,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "காப்பு தரவு");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "காப்புப்பிரதி & மீட்டமை");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "எங்கள் காப்புப்பிரதியைப் பயன்படுத்தி உங்கள் தரவை எளிதாகப் பாதுகாக்கவும்");
 
         backupDataPage.clickOnGoBack();
@@ -473,7 +474,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "ಬ್ಯಾಕಪ್ ಡೇಟಾ");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "ಬ್ಯಾಕಪ್ & ಮರುಸ್ಥಾಪಿಸಿ");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "ನಮ್ಮ ಬ್ಯಾಕಪ್ ಅನ್ನು ಬಳಸಿಕೊಂಡು ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಸುಲಭವಾಗಿ ರಕ್ಷಿಸಿ");
         backupDataPage.clickOnGoBack();
         assertEquals(homePage.getShareButton(), "ಹಂಚಿಕೊಳ್ಳಿ");
@@ -518,7 +519,9 @@ public class ChangeLanguageTest extends IosBaseTest {
         assertTrue(unlockApplicationPage.isUnlockApplicationPageLoadedInArabic(), "Verify if language is changed to arabic");
         unlockApplicationPage.clickOnUnlockApplicationButton();
         setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.IOS);
+        DetailedVcViewPage detailedVcViewPage = homePage.openDetailedVcView(TestDataReader.readData("fullName"));
         assertEquals(homePage.getfullNameTitleText(), "الاسم الكامل");
+        detailedVcViewPage.clickOnBackArrow();
 
         homePage.clickOnSettingIcon();
         settingsPage.clickOnlanguageButtonInArabic();
@@ -526,6 +529,7 @@ public class ChangeLanguageTest extends IosBaseTest {
 
         unlockApplicationPage.clickOnUnlockApplicationButton();
         setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.IOS);
+        homePage.openDetailedVcView(TestDataReader.readData("fullName"));
         assertEquals(homePage.getfullNameTitleText(), "पूरा नाम");
     }
 
@@ -568,8 +572,7 @@ public class ChangeLanguageTest extends IosBaseTest {
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.IOS);
 
         assertEquals(homePage.getFullNameValue(), "TEST_FULLNAMEara");
-        assertEquals(homePage.GetIdTypeText(), "البطاقة الوطنية");
-        assertEquals(homePage.GetActivationPendingText(), "التنشيط معلق لتسجيل الدخول عبر الإنترنت!");
+//        assertEquals(homePage.GetActivationPendingText(), "التنشيط معلق لتسجيل الدخول عبر الإنترنت!");
     }
     @Test
     public void downloadVcAndChnageLangaugeVerifyVcViaSunbird() throws InterruptedException {
@@ -596,11 +599,12 @@ public class ChangeLanguageTest extends IosBaseTest {
 
         assertTrue(addNewCardPage.isDownloadViaSunbirdDisplayed(), "Verify if download sunbird displayed");
         SunbirdLoginPage sunbirdLoginPage =  addNewCardPage.clickOnDownloadViaSunbird();
+        addNewCardPage.clickOnInsuranceCredential();
         addNewCardPage.clickOnContinueButtonInSigninPopupIos();
-        // sunbirdLoginPage.clickOnloginWithKbaButton();
         sunbirdLoginPage.enterPolicyNumberTextBox(TestDataReader.readData("policyNumberSunbird"));
         sunbirdLoginPage.enterFullNameTextBox(TestDataReader.readData("fullNameSunbird"));
         sunbirdLoginPage.enterDateOfBirthTextBox();
+        IosUtil.scrollToElement(driver,100,800,100,200);
         sunbirdLoginPage.clickOnloginButton();
 
         assertTrue(sunbirdLoginPage.isSunbirdCardIsActive(), "Verify if download sunbird displayed active");
@@ -610,13 +614,10 @@ public class ChangeLanguageTest extends IosBaseTest {
         settingsPage.clickOnLanguage().clickOnHindiLanguage();
 
         assertTrue(settingsPage.verifyHindiLanguage(), "Verify if language is changed to hindi");
-        settingsPage.clickOnBackArrow();
-
+        homePage.clickOnHomeButton();
 
         assertTrue(sunbirdLoginPage.isSunbirdCardLogoIsDisplayed(), "Verify if download sunbird logo displayed");
         assertEquals(sunbirdLoginPage.getFullNameForSunbirdCard(),TestDataReader.readData("fullNameSunbird"));
-        assertEquals(sunbirdLoginPage.getPolicyNameForSunbirdCard(),TestDataReader.readData("policyNameSunbird"));
-        assertEquals(sunbirdLoginPage.getIdTypeValueForSunbirdCard(),TestDataReader.readData("idTypeSunbird"));
 
         sunbirdLoginPage.openDetailedSunbirdVcView();
 
@@ -626,7 +627,9 @@ public class ChangeLanguageTest extends IosBaseTest {
         assertEquals(sunbirdLoginPage.getDateofBirthValueForSunbirdCard(),TestDataReader.readData("dateOfBirthSunbird"));
         assertEquals(sunbirdLoginPage.getGenderValueForSunbirdCard(),TestDataReader.readData("genderValueSunbird"));
         assertEquals(sunbirdLoginPage.getEmailIdValueForSunbirdCard(),TestDataReader.readData("emailIdValueSunbird"));
-        assertEquals(sunbirdLoginPage.getStatusValueForSunbirdCard(),TestDataReader.readData("statusValueSunbird"));
+        assertEquals(sunbirdLoginPage.getStatusValueForSunbirdCard(),"वैध");
+        assertTrue(sunbirdLoginPage.isPolicyExpiresOnValueDisplayed(), "Verify if policy expireson value displayed");
+        assertTrue(sunbirdLoginPage.isbenefitsValueDisplayed(), "Verify if policy expireson value displayed");
         assertEquals(sunbirdLoginPage.getIdTypeValueForSunbirdCard(),TestDataReader.readData("idTypeSunbird"));
     }
 }

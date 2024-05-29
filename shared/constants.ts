@@ -1,14 +1,15 @@
 import {Platform} from 'react-native';
 import {DEBUG_MODE, ESIGNET_HOST, MIMOTO_HOST} from 'react-native-dotenv';
 import {Argon2iConfig} from './commonUtil';
-import {VcIdType} from '../types/VC/ExistingMosipVC/vc';
+import {VcIdType} from '../machines/VerifiableCredential/VCMetaMachine/vc';
 
 export let MIMOTO_BASE_URL = MIMOTO_HOST;
 export let ESIGNET_BASE_URL = ESIGNET_HOST;
 export let DEBUG_MODE_ENABLED = DEBUG_MODE === 'true';
 
-export const changeCrendetialRegistry = host => (MIMOTO_BASE_URL = host);
-export const changeEsignetUrl = host => (ESIGNET_BASE_URL = host);
+export const changeCrendetialRegistry = (host: string) =>
+  (MIMOTO_BASE_URL = host);
+export const changeEsignetUrl = (host: string) => (ESIGNET_BASE_URL = host);
 
 export const COMMON_PROPS_KEY: string =
   'CommonPropsKey-' + '6964d04a-9268-11ed-a1eb-0242ac120002';
@@ -38,9 +39,9 @@ export const ACTIVITY_LOG_STORE_KEY = 'activityLog';
 
 export const SETTINGS_STORE_KEY = 'settings';
 
-export const LAST_BACKUP_DETAILS = 'lastBackupDetails';
-
 export const APP_ID_LENGTH = 12;
+
+export const FACE_AUTH_CONSENT = 'faceAuthConsent';
 
 //Banner Status
 export const BANNER_TYPE_SUCCESS = 'success';
@@ -124,4 +125,8 @@ export const IOS_SIGNIN_FAILED = 'iCloud not available';
 export const REQUEST_TIMEOUT = 'request timedout';
 export const BIOMETRIC_CANCELLED = 'User has cancelled biometric';
 export const GOOGLE_DRIVE_NAME = 'Google Drive';
+export const GMAIL = 'gmail';
+export const APPLE = 'Apple';
 export const ICLOUD_DRIVE_NAME = 'iCloud';
+export const DEFAULT_ECL = 'M';
+export const DEFAULT_QR_HEADER = 'INJIQUICKSHARE://';

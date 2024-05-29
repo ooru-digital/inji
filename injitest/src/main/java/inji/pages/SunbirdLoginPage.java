@@ -21,7 +21,7 @@ public class SunbirdLoginPage extends BasePage {
     @AndroidFindBy(xpath = "//*[contains(@text,'Login with KBA')]")
     private WebElement loginWithKBA;
 
-    @AndroidFindBy(xpath = "//android.widget.EditText[@resource-id=\"_form_policyNumber\"]")
+    @AndroidFindBy(xpath = "//*[@resource-id=\"_form_policyNumber\"]")
     @iOSXCUITFindBy(xpath = "//XCUIElementTypeTextField[@name=\"Please fill in this field\" and @value=\"Policy Number\"]")
     private WebElement enterPolicyTextBox;
 
@@ -29,7 +29,7 @@ public class SunbirdLoginPage extends BasePage {
     @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeTextField[`name == \"Please fill in this field\"`][2]")
     private WebElement enterFullnameTextBox;
 
-    @AndroidFindBy(xpath = "//android.widget.Spinner[@resource-id=\"_form_dob\"]")
+    @AndroidFindBy(uiAutomator = "UiSelector().className(\"android.widget.Spinner\")")
     @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeOther[`name == \"Please fill in this field\"`]")
     private WebElement enterDateOfBirthTextBox;
 
@@ -50,51 +50,59 @@ public class SunbirdLoginPage extends BasePage {
     @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeButton[`name == \"Login\"`]")
     private WebElement loginButton;
 
+
+    @AndroidFindBy(xpath = "//android.widget.Button[@text=\"Login\"]")
+    @iOSXCUITFindBy(iOSClassChain = "**/XCUIElementTypeButton[`name == \"Login\"`]")
+    private WebElement loginButtonSecond;
     @AndroidFindBy(xpath = "//android.widget.ImageButton[@content-desc=\"Previous month\"]")
     @iOSXCUITFindBy(accessibility = "Previous Month")
     private WebElement previousMonth;
 
-    @AndroidFindBy(accessibility = "activated")
-    @iOSXCUITFindBy(accessibility = "activated")
+    @AndroidFindBy(accessibility = "wallet-activated-icon")
+    @iOSXCUITFindBy(accessibility = "wallet-activated-icon")
     private WebElement activatedStatus;
 
     @AndroidFindBy(accessibility = "a square logo of a Sunbird")
     @iOSXCUITFindBy(accessibility = "a square logo of a Sunbird")
     private WebElement sunbirdLogo;
 
-    @AndroidFindBy(accessibility = "NameValue")
-    @iOSXCUITFindBy(accessibility = "NameValue")
+    @AndroidFindBy(accessibility = "fullNameValue")
+    @iOSXCUITFindBy(accessibility = "fullNameValue")
     private WebElement fullName;
 
-    @AndroidFindBy(accessibility = "Policy NameValue")
-    @iOSXCUITFindBy(accessibility = "Policy NameValue")
+    @AndroidFindBy(accessibility = "fullNameValue")
+    @iOSXCUITFindBy(accessibility = "fullNameValue")
+    private WebElement fullNameInDetailView;
+
+    @AndroidFindBy(accessibility = "policyNameValue")
+    @iOSXCUITFindBy(accessibility = "policyNameValue")
     private WebElement policyName;
 
-    @AndroidFindBy(accessibility = "ID TypeValue")
-    @iOSXCUITFindBy(accessibility = "ID TypeValue")
+    @AndroidFindBy(accessibility = "idTypeValue")
+    @iOSXCUITFindBy(accessibility = "idTypeValue")
     private WebElement idType;
 
     @iOSXCUITFindBy(accessibility = "Continue")
     private WebElement continueButton;
 
-    @AndroidFindBy(accessibility = "valid")
-    @iOSXCUITFindBy(accessibility = "valid")
+    @AndroidFindBy(accessibility = "verificationStatus")
+    @iOSXCUITFindBy(accessibility = "verificationStatus")
     private WebElement status;
 
-    @AndroidFindBy(accessibility = "Email IdValue")
-    @iOSXCUITFindBy(accessibility = "Email IdValue")
+    @AndroidFindBy(accessibility = "emailValue")
+    @iOSXCUITFindBy(accessibility = "emailValue")
     private WebElement emailIdValue;
 
-    @AndroidFindBy(accessibility = "GenderValue")
-    @iOSXCUITFindBy(accessibility = "GenderValue")
+    @AndroidFindBy(accessibility = "genderValue")
+    @iOSXCUITFindBy(accessibility = "genderValue")
     private WebElement gender;
 
-    @AndroidFindBy(accessibility = "Date of BirthValue")
-    @iOSXCUITFindBy(accessibility = "Date of BirthValue")
+    @AndroidFindBy(accessibility = "dobValue")
+    @iOSXCUITFindBy(accessibility = "dobValue")
     private WebElement dateofBirthValue;
 
-    @AndroidFindBy(accessibility = "Phone NumberValue")
-    @iOSXCUITFindBy(accessibility = "Phone NumberValue")
+    @AndroidFindBy(accessibility = "mobileValue")
+    @iOSXCUITFindBy(accessibility = "mobileValue")
     private WebElement phoneNumber;
 
     @AndroidFindBy(accessibility = "Policy NumberValue")
@@ -112,6 +120,33 @@ public class SunbirdLoginPage extends BasePage {
     @AndroidFindBy(accessibility = "qrCodeHeader")
     @iOSXCUITFindBy(accessibility = "qrCodeHeader")
     private WebElement qrCodeHeader;
+
+    @AndroidFindBy(accessibility = "credentialTypeSelectionScreen")
+    @iOSXCUITFindBy(accessibility = "credentialTypeSelectionScreen")
+    private WebElement credentialTypeSelectionScreen;
+
+    @AndroidFindBy(accessibility = "credentialTypeItem-InsuranceCredential")
+    @iOSXCUITFindBy(accessibility = "credentialTypeItem-InsuranceCredential")
+    private WebElement credentialTypeItemInsuranceCredential;
+
+    @AndroidFindBy(accessibility = "credentialTypeItem-LifeInsuranceCredential_ldp")
+    @iOSXCUITFindBy(accessibility = "credentialTypeItem-LifeInsuranceCredential_ldp")
+    private WebElement credentialTypeItemLifeInsuranceCredentialldp;
+
+    @AndroidFindBy(accessibility = "arrow-left")
+    @iOSXCUITFindBy(accessibility = "goBack")
+    private WebElement arrowLeft;
+
+    @AndroidFindBy(accessibility = "policyExpiresOnValue")
+    @iOSXCUITFindBy(accessibility = "policyExpiresOnValue")
+    private WebElement policyExpiresOnValue;
+
+    @AndroidFindBy(accessibility = "benefitsValue")
+    @iOSXCUITFindBy(accessibility = "benefitsValue")
+    private WebElement benefitsValue;
+
+    @AndroidFindBy(xpath = "//android.view.ViewGroup[@resource-id=\"statusIcon\"]")
+    private WebElement statusIcon;
 
     public SunbirdLoginPage(AppiumDriver driver) {
         super(driver);
@@ -137,7 +172,7 @@ public class SunbirdLoginPage extends BasePage {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        sendKeysToTextBox(enterFullnameTextBox, fullname);
+            sendKeysToTextBox(enterFullnameTextBox, fullname);
     }
 
     public void enterDateOfBirthTextBox() {
@@ -169,7 +204,12 @@ public class SunbirdLoginPage extends BasePage {
         }
     }
     public void clickOnloginButton() {
-        clickOnElement(loginButton);
+        if(isElementDisplayed(loginButton)) {
+            clickOnElement(loginButton);
+        }
+        else {
+            clickOnElement(loginButtonSecond);
+        }
     }
 
     public boolean isSunbirdCardIsActive() {
@@ -181,9 +221,14 @@ public class SunbirdLoginPage extends BasePage {
         basePage.retrieToGetElement(sunbirdLogo);
         return this.isElementDisplayed(sunbirdLogo);
     }
+
     public String getFullNameForSunbirdCard() {
         basePage.retrieToGetElement(fullName);
         return this.getTextFromLocator(fullName);
+    }
+    public String getFullNameForSunbirdCardForDetailView() {
+        basePage.retrieToGetElement(fullNameInDetailView);
+        return this.getTextFromLocator(fullNameInDetailView);
     }
     public String getPolicyNameForSunbirdCard() {
         basePage.retrieToGetElement(policyName);
@@ -233,4 +278,35 @@ public class SunbirdLoginPage extends BasePage {
         basePage.retrieToGetElement(fullName);
         clickOnElement(fullName);
     }
+
+    public boolean isSunbirdRCInsuranceVerifiableCredentialHeaderDisplayed() {
+        basePage.retrieToGetElement(credentialTypeSelectionScreen);
+        return this.isElementDisplayed(credentialTypeSelectionScreen);
+    }
+
+    public boolean isMosipInsuranceDisplayed() {
+        basePage.retrieToGetElement(credentialTypeItemInsuranceCredential);
+        return this.isElementDisplayed(credentialTypeItemInsuranceCredential);
+    }
+
+    public void clickOnMosipInsurance() {
+         this.clickOnElement(credentialTypeItemInsuranceCredential);
+    }
+
+ public void clickOnBackArrow() {
+        this.clickOnElement(arrowLeft);
+ }
+
+    public boolean isPolicyExpiresOnValueDisplayed() {
+        return this.isElementDisplayed(policyExpiresOnValue);
+    }
+
+    public boolean isbenefitsValueDisplayed() {
+        return this.isElementDisplayed(benefitsValue);
+    }
+
+    public boolean isStatusIconDisplayed() {
+        return this.isElementDisplayed(statusIcon);
+    }
+
 }

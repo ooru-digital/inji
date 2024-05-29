@@ -1,5 +1,6 @@
 package inji.pages;
 
+import inji.utils.IosUtil;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.appium.java_client.pagefactory.iOSXCUITFindBy;
@@ -7,7 +8,11 @@ import org.openqa.selenium.WebElement;
 
 public class MoreOptionsPage extends BasePage {
 
-    @AndroidFindBy(accessibility = "removeFromWallet")
+//    @AndroidFindBy(accessibility = "outlined-delete-icon")
+//    @iOSXCUITFindBy(accessibility = "removeFromWallet")
+//    private WebElement removeFromWalletButton;
+
+    @AndroidFindBy(uiAutomator = "new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollIntoView(new UiSelector().description(\"removeFromWallet\"))")
     @iOSXCUITFindBy(accessibility = "removeFromWallet")
     private WebElement removeFromWalletButton;
 
@@ -27,8 +32,8 @@ public class MoreOptionsPage extends BasePage {
     @iOSXCUITFindBy(accessibility = "pendingActivationOrActivated")
     private WebElement activationPending;
 
-    @AndroidFindBy(accessibility = "profileAuthenticated")
-    @iOSXCUITFindBy(accessibility = "profileAuthenticated")
+    @AndroidFindBy(accessibility = "wallet-activated-icon")
+    @iOSXCUITFindBy(accessibility = "wallet-activated-icon")
     private WebElement activatedForOnlineLoginButton;
 
     @AndroidFindBy(accessibility = "close")
@@ -61,6 +66,7 @@ public class MoreOptionsPage extends BasePage {
     }
 
     public HistoryPage clickOnViewActivityLog() {
+        IosUtil.scrollToElement(driver, 171, 2149, 625, 1944);
         clickOnElement(viewActivityLogButton);
         return new HistoryPage(driver);
     }
@@ -84,6 +90,6 @@ public class MoreOptionsPage extends BasePage {
     }
 
     public boolean isVcActivatedDisplayed() {
-        return this.isElementDisplayed(activated);
+        return this.isElementDisplayed(activatedForOnlineLoginButton);
     }
 }

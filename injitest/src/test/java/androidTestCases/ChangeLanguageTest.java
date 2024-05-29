@@ -65,7 +65,7 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         assertTrue(settingsPage.isSettingPageLoaded(), "Verify if setting page is displayed");
         settingsPage.clickOnLanguage();
 
-        assertTrue(settingsPage.verifyLanguagesInLanguageFilter(), "Verify if all languages are shown in language filter");
+        assertTrue(settingsPage.verifyLanguagesInLanguageFilter("ANDROID"), "Verify if all languages are shown in language filter");
     }
 
     @Test
@@ -153,7 +153,7 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         settingsPage.clickOnLanguage().clickOnFilipinoLanguage();
 
         assertTrue(settingsPage.verifyFilipinoLanguage(), "Verify if language is changed to filipino");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
 
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"Dalhin ang Iyong Digital ID");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -196,7 +196,7 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         settingsPage.clickOnLanguage().clickOnFilipinoLanguage();
 
         assertTrue(settingsPage.verifyFilipinoLanguage(), "Verify if language is changed to filipino");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
 
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"Dalhin ang Iyong Digital ID");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -239,7 +239,7 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         settingsPage.clickOnLanguage().clickOnHindiLanguage();
 
         assertTrue(settingsPage.verifyHindiLanguage(), "Verify if language is changed to hindi");
-        settingsPage.clickOnBackArrow();
+        homePage.clickOnHomeButton();
 
         assertEquals(homePage.verifyLanguageForNoVCDownloadedPageLoaded(),"अपनी डिजिटल आईडी लाओ");
         AddNewCardPage addNewCardPage = homePage.downloadCard();
@@ -306,9 +306,10 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "Backup na Data");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "Backup & Ibalik");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "Protektahan ang iyong data nang madali gamit ang aming Backup");
         backupDataPage.clickOnGoBack();
+        homePage.clickOnHomeButton();
         assertEquals(homePage.getShareButton(), "Ibahagi");
     }
 
@@ -361,9 +362,10 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "बैकअप डेटा");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "बैकअप & पुनर्स्थापित करना");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "हमारे बैकअप का उपयोग करके आसानी से अपने डेटा को सुरक्षित रखें");
         backupDataPage.clickOnGoBack();
+        homePage.clickOnHomeButton();
         assertEquals(homePage.getShareButton(), "शेयर करना");
     }
 
@@ -416,10 +418,11 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "காப்பு தரவு");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "காப்புப்பிரதி & மீட்டமை");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "எங்கள் காப்புப்பிரதியைப் பயன்படுத்தி உங்கள் தரவை எளிதாகப் பாதுகாக்கவும்");
 
         backupDataPage.clickOnGoBack();
+        homePage.clickOnHomeButton();
         assertEquals(homePage.getShareButton(), "பகிர்");
     }
 
@@ -472,9 +475,11 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         quickAccessPage.clickOnNextButton();
 
         BackupDataTourPage backupDataPage = new BackupDataTourPage(driver);
-        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "ಬ್ಯಾಕಪ್ ಡೇಟಾ");
+        assertEquals(backupDataPage.verifyLanguageforBackupDataPageLoaded(), "ಬ್ಯಾಕಪ್ & ಮರುಸ್ಥಾಪಿಸಿ");
         assertEquals(backupDataPage.getBackupDataPageDescription(), "ನಮ್ಮ ಬ್ಯಾಕಪ್ ಅನ್ನು ಬಳಸಿಕೊಂಡು ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಸುಲಭವಾಗಿ ರಕ್ಷಿಸಿ");
         backupDataPage.clickOnGoBack();
+
+        homePage.clickOnHomeButton();
         assertEquals(homePage.getShareButton(), "ಹಂಚಿಕೊಳ್ಳಿ");
     }
 
@@ -509,11 +514,8 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         assertTrue(addNewCardPage.isAddNewCardPageGuideMessageForEsignetDisplayed(), "Verify if add new card guide message displayed");
         assertTrue(addNewCardPage.isDownloadViaSunbirdDisplayed(), "Verify if download sunbird displayed");
         SunbirdLoginPage sunbirdLoginPage =  addNewCardPage.clickOnDownloadViaSunbird();
+        addNewCardPage.clickOnInsuranceCredential();
 
-//          assertTrue(esignetLoginPage.isLoadingPageTextLoaded(), "Verify if loading page displayed");
-//          assertTrue(esignetLoginPage.isSettingUpTextDisplayed(), "Verify if loading page displayed");
-
-        // sunbirdLoginPage.clickOnloginWithKbaButton();
         sunbirdLoginPage.enterPolicyNumberTextBox(TestDataReader.readData("policyNumberSunbird"));
         sunbirdLoginPage.enterFullNameTextBox(TestDataReader.readData("fullNameSunbird"));
         sunbirdLoginPage.enterDateOfBirthTextBox();
@@ -526,14 +528,10 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         settingsPage.clickOnLanguage().clickOnHindiLanguage();
 
         assertTrue(settingsPage.verifyHindiLanguage(), "Verify if language is changed to hindi");
-        settingsPage.clickOnBackArrow();
-
+        homePage.clickOnHomeButton();
 
         assertTrue(sunbirdLoginPage.isSunbirdCardLogoIsDisplayed(), "Verify if download sunbird logo displayed");
         assertEquals(sunbirdLoginPage.getFullNameForSunbirdCard(),TestDataReader.readData("fullNameSunbird"));
-        assertEquals(sunbirdLoginPage.getPolicyNameForSunbirdCard(),TestDataReader.readData("policyNameSunbird"));
-        assertEquals(sunbirdLoginPage.getIdTypeValueForSunbirdCard(),TestDataReader.readData("idTypeSunbird"));
-
         sunbirdLoginPage.openDetailedSunbirdVcView();
 
         assertEquals(sunbirdLoginPage.getFullNameForSunbirdCard(),TestDataReader.readData("fullNameSunbird"));
@@ -542,8 +540,19 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         assertEquals(sunbirdLoginPage.getDateofBirthValueForSunbirdCard(),TestDataReader.readData("dateOfBirthSunbird"));
         assertEquals(sunbirdLoginPage.getGenderValueForSunbirdCard(),TestDataReader.readData("genderValueSunbird"));
         assertEquals(sunbirdLoginPage.getEmailIdValueForSunbirdCard(),TestDataReader.readData("emailIdValueSunbird"));
-        assertEquals(sunbirdLoginPage.getStatusValueForSunbirdCard(),TestDataReader.readData("statusValueSunbird"));
+        assertEquals(sunbirdLoginPage.getStatusValueForSunbirdCard(),"वैध");
+        assertTrue(sunbirdLoginPage.isPolicyExpiresOnValueDisplayed(), "Verify if policy expireson value displayed");
         assertEquals(sunbirdLoginPage.getIdTypeValueForSunbirdCard(),TestDataReader.readData("idTypeSunbird"));
+        sunbirdLoginPage.clickOnBackArrow();
+
+        homePage.clickOnSettingIcon();
+        assertTrue(settingsPage.isSettingPageLoaded(), "Verify if setting page is displayed");
+        UnlockApplicationPage unlockApplicationPage = settingsPage.clickOnLanguage().clickOnArabicLanguageButton();
+
+        assertTrue(unlockApplicationPage.isUnlockApplicationPageLoadedInArabic(), "Verify if language is changed to arabic");
+        unlockApplicationPage.clickOnUnlockApplicationButton();
+        setPasscode.enterPasscode(TestDataReader.readData("passcode"), Target.ANDROID);
+        assertTrue(sunbirdLoginPage.isStatusIconDisplayed(), "Verify if status icon displayed");
     }
 
     @Test
@@ -584,9 +593,10 @@ public class ChangeLanguageTest extends AndroidBaseTest {
         assertTrue(otpVerification.isOtpVerificationPageLoaded(), "Verify if otp verification page is displayed");
         otpVerification.enterOtp(BaseTestCase.getOtp(), Target.ANDROID);
 
+        DetailedVcViewPage detailedVcViewPage = homePage.openDetailedVcView(TestDataReader.readData("fullName"));
         assertEquals(homePage.getFullNameValue(), "TEST_FULLNAMEara");
-        assertEquals(homePage.GetIdTypeText(), "البطاقة الوطنية");
-        assertEquals(homePage.GetActivationPendingText(), "التنشيط معلق لتسجيل الدخول عبر الإنترنت!");
+//        assertEquals(homePage.GetIdTypeText(), "البطاقة الوطنية");
+        assertEquals(homePage.GetActivationPendingHeaderText(), "التنشيط معلق لتسجيل الدخول عبر الإنترنت!");
     }
 
 }

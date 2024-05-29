@@ -14,16 +14,10 @@ export interface Typegen0 {
       data: unknown;
       __tip: 'See the XState TS docs to learn how to strongly type this.';
     };
-    'done.invoke.scan.reviewing.creatingVp:invocation[0]': {
-      type: 'done.invoke.scan.reviewing.creatingVp:invocation[0]';
-      data: unknown;
-      __tip: 'See the XState TS docs to learn how to strongly type this.';
-    };
     'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection': {
       type: 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection';
     };
     'xstate.init': {type: 'xstate.init'};
-    'xstate.stop': {type: 'xstate.stop'};
   };
   invokeSrcNameMap: {
     checkBluetoothPermission: 'done.invoke.scan.checkBluetoothPermission.checking:invocation[0]';
@@ -34,7 +28,6 @@ export interface Typegen0 {
     checkLocationStatus: 'done.invoke.scan.checkingLocationState.checkLocationService:invocation[0]';
     checkNearByDevicesPermission: 'done.invoke.scan.checkNearbyDevicesPermission.checking:invocation[0]';
     checkStorageAvailability: 'done.invoke.scan.checkStorage:invocation[0]';
-    createVp: 'done.invoke.scan.reviewing.creatingVp:invocation[0]';
     disconnect:
       | 'done.invoke.scan.clearingConnection:invocation[0]'
       | 'done.invoke.scan.disconnectDevice:invocation[0]'
@@ -53,35 +46,42 @@ export interface Typegen0 {
     services: never;
   };
   eventsCausingActions: {
-    clearCreatedVp:
-      | ''
-      | 'BLE_ERROR'
-      | 'DISCONNECT'
-      | 'RESET'
-      | 'RETRY'
-      | 'SCREEN_BLUR'
-      | 'SCREEN_FOCUS'
-      | 'xstate.stop';
-    clearUri:
+    clearUri: 'STORE_RESPONSE';
+    getFaceAuthConsent:
       | 'DISCONNECT'
       | 'DISMISS'
       | 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection';
+    loadMetaDataToMemory: 'SCAN';
+    loadVCDataToMemory: 'STORE_RESPONSE';
     logFailedVerification: 'FACE_INVALID';
     logShared: 'VC_ACCEPTED';
     openAppPermission: 'GOTO_SETTINGS' | 'LOCATION_REQUEST';
     openBluetoothSettings: 'GOTO_SETTINGS';
-    registerLoggers:
-      | 'DISCONNECT'
-      | 'DISMISS'
-      | 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection';
+    refreshVCs: 'STORE_RESPONSE';
+    registerLoggers: 'STORE_RESPONSE';
     removeLoggers:
       | 'DISCONNECT'
       | 'DISMISS'
+      | 'DISMISS_QUICK_SHARE_BANNER'
       | 'SCREEN_BLUR'
-      | 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection'
+      | 'STORE_RESPONSE'
       | 'xstate.init';
     resetFaceCaptureBannerStatus: 'ACCEPT_REQUEST' | 'CLOSE_BANNER';
-    resetShouldVerifyPresence: 'CANCEL' | 'CONNECTED' | 'DISMISS' | 'RETRY';
+    resetFlowType:
+      | 'DISCONNECT'
+      | 'DISMISS'
+      | 'DISMISS_QUICK_SHARE_BANNER'
+      | 'GOTO_HISTORY'
+      | 'SCREEN_BLUR'
+      | 'xstate.init';
+    resetSelectedVc:
+      | 'DISCONNECT'
+      | 'DISMISS'
+      | 'DISMISS_QUICK_SHARE_BANNER'
+      | 'GOTO_HISTORY'
+      | 'SCREEN_BLUR'
+      | 'xstate.init';
+    resetShowQuickShareSuccessBanner: 'DISMISS' | 'DISMISS_QUICK_SHARE_BANNER';
     sendBLEConnectionErrorEvent: 'BLE_ERROR';
     sendScanData: 'SCAN';
     sendVCShareFlowCancelEndEvent: 'CANCEL';
@@ -89,37 +89,40 @@ export interface Typegen0 {
     sendVcShareSuccessEvent: 'VC_ACCEPTED';
     sendVcSharingStartEvent: 'SCAN';
     setBleError: 'BLE_ERROR';
-    setChildRef:
-      | 'DISCONNECT'
-      | 'DISMISS'
-      | 'xstate.after(DESTROY_TIMEOUT)#scan.clearingConnection';
-    setCreatedVp: 'done.invoke.scan.reviewing.creatingVp:invocation[0]';
+    setChildRef: 'STORE_RESPONSE';
+    setFlowType: 'SELECT_VC';
     setLinkCode: 'SCAN';
+    setQuickShareData: 'SCAN';
     setReadyForBluetoothStateCheck: 'BLUETOOTH_PERMISSION_ENABLED';
     setReceiverInfo: 'CONNECTED';
     setSelectedVc: 'SELECT_VC';
     setSenderInfo: 'CONNECTED';
-    setShareLogTypeUnverified: 'ACCEPT_REQUEST';
+    setShareLogTypeUnverified: 'ACCEPT_REQUEST' | 'CHECK_FLOW_TYPE';
     setShareLogTypeVerified: 'FACE_VALID';
+    setShowFaceAuthConsent: 'FACE_VERIFICATION_CONSENT';
+    setShowQuickShareSuccessBanner: 'STORE_RESPONSE';
     setUri: 'SCAN';
     storeLoginItem: 'done.invoke.QrLogin';
+    storeShowFaceAuthConsent: 'FACE_VERIFICATION_CONSENT';
     storingActivityLog: 'STORE_RESPONSE';
-    toggleShouldVerifyPresence: 'TOGGLE_USER_CONSENT';
     updateFaceCaptureBannerStatus: 'FACE_VALID';
+    updateShowFaceAuthConsent: 'STORE_RESPONSE';
   };
   eventsCausingDelays: {
     CONNECTION_TIMEOUT: 'SCAN';
     DESTROY_TIMEOUT: '' | 'DISMISS' | 'LOCATION_ENABLED' | 'RETRY';
-    SHARING_TIMEOUT:
-      | 'ACCEPT_REQUEST'
-      | 'FACE_VALID'
-      | 'done.invoke.scan.reviewing.creatingVp:invocation[0]';
+    SHARING_TIMEOUT: 'ACCEPT_REQUEST' | 'CHECK_FLOW_TYPE' | 'FACE_VALID';
   };
   eventsCausingGuards: {
+    isFlowTypeMiniViewShare: 'CHECK_FLOW_TYPE';
+    isFlowTypeMiniViewShareWithSelfie: 'CHECK_FLOW_TYPE';
+    isFlowTypeSimpleShare: 'CANCEL' | 'CHECK_FLOW_TYPE' | 'DISMISS';
     isIOS: 'BLUETOOTH_STATE_DISABLED' | 'START_PERMISSION_CHECK';
     isMinimumStorageRequiredForAuditEntryReached: 'done.invoke.scan.checkStorage:invocation[0]';
     isOpenIdQr: 'SCAN';
     isQrLogin: 'SCAN';
+    isQuickShare: 'SCAN';
+    showFaceAuthConsentScreen: 'VERIFY_AND_ACCEPT_REQUEST';
     uptoAndroid11: '' | 'START_PERMISSION_CHECK';
   };
   eventsCausingServices: {
@@ -133,17 +136,13 @@ export interface Typegen0 {
     checkLocationPermission: 'APP_ACTIVE' | 'LOCATION_ENABLED';
     checkLocationStatus: '' | 'LOCATION_REQUEST';
     checkNearByDevicesPermission: 'APP_ACTIVE' | 'START_PERMISSION_CHECK';
-    checkStorageAvailability: 'RESET' | 'SCREEN_FOCUS';
-    createVp: never;
+    checkStorageAvailability: 'RESET' | 'SCREEN_FOCUS' | 'SELECT_VC';
     disconnect: '' | 'DISMISS' | 'LOCATION_ENABLED' | 'RETRY' | 'SCREEN_BLUR';
     monitorConnection: 'DISMISS' | 'SCREEN_BLUR' | 'xstate.init';
     requestBluetooth: 'BLUETOOTH_STATE_DISABLED';
     requestNearByDevicesPermission: 'NEARBY_DISABLED';
     requestToEnableLocationPermission: 'LOCATION_DISABLED';
-    sendVc:
-      | 'ACCEPT_REQUEST'
-      | 'FACE_VALID'
-      | 'done.invoke.scan.reviewing.creatingVp:invocation[0]';
+    sendVc: 'ACCEPT_REQUEST' | 'CHECK_FLOW_TYPE' | 'FACE_VALID';
     startConnection: 'SCAN';
   };
   matchesStates:
@@ -156,6 +155,7 @@ export interface Typegen0 {
     | 'checkBluetoothState.checking'
     | 'checkBluetoothState.enabled'
     | 'checkBluetoothState.requesting'
+    | 'checkFaceAuthConsent'
     | 'checkNearbyDevicesPermission'
     | 'checkNearbyDevicesPermission.checking'
     | 'checkNearbyDevicesPermission.enabled'
@@ -171,12 +171,16 @@ export interface Typegen0 {
     | 'connecting'
     | 'connecting.inProgress'
     | 'connecting.timeout'
+    | 'decodeQuickShareData'
     | 'disconnectDevice'
     | 'disconnected'
     | 'findingConnection'
     | 'handlingBleError'
     | 'inactive'
     | 'invalid'
+    | 'loadVCS'
+    | 'loadVCS.idle'
+    | 'loadVCS.navigatingToHome'
     | 'nearByDevicesPermissionDenied'
     | 'recheckBluetoothState'
     | 'recheckBluetoothState.checking'
@@ -185,8 +189,9 @@ export interface Typegen0 {
     | 'reviewing'
     | 'reviewing.accepted'
     | 'reviewing.cancelling'
-    | 'reviewing.creatingVp'
     | 'reviewing.disconnect'
+    | 'reviewing.faceVerificationConsent'
+    | 'reviewing.idle'
     | 'reviewing.invalidIdentity'
     | 'reviewing.navigateToHistory'
     | 'reviewing.rejected'
@@ -212,12 +217,14 @@ export interface Typegen0 {
           | 'disabled'
           | 'requestToEnableLocation';
         connecting?: 'inProgress' | 'timeout';
+        loadVCS?: 'idle' | 'navigatingToHome';
         recheckBluetoothState?: 'checking' | 'enabled';
         reviewing?:
           | 'accepted'
           | 'cancelling'
-          | 'creatingVp'
           | 'disconnect'
+          | 'faceVerificationConsent'
+          | 'idle'
           | 'invalidIdentity'
           | 'navigateToHistory'
           | 'rejected'

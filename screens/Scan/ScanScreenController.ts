@@ -1,7 +1,7 @@
 import {useSelector} from '@xstate/react';
 import {useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {selectShareableVcsMetadata} from '../../machines/VCItemMachine/vc';
+import {selectShareableVcsMetadata} from '../../machines/VerifiableCredential/VCMetaMachine/VCMetaSelectors';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {
   selectIsLocationDenied,
@@ -11,6 +11,8 @@ import {
   selectIsInvalid,
   selectIsShowQrLogin,
   selectQrLoginRef,
+  selectIsQuickShareDone,
+  selectShowQuickShareSuccessBanner,
 } from '../../machines/bleShare/scan/selectors';
 import {
   selectIsBluetoothDenied,
@@ -18,23 +20,24 @@ import {
   selectReadyForBluetoothStateCheck,
   selectIsBluetoothPermissionDenied,
   selectIsStartPermissionCheck,
+  selectIsLocationPermissionRationale,
 } from '../../machines/bleShare/commonSelectors';
 import {
   ScanEvents,
   selectIsMinimumStorageRequiredForAuditEntryLimitReached,
 } from '../../machines/bleShare/scan/scanMachine';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
-import {MainBottomTabParamList} from '../../routes/main';
+import {MainBottomTabParamList} from '../../routes/routeTypes';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
 
 export function useScanScreen() {
   const {t} = useTranslation('ScanScreen');
   const {appService} = useContext(GlobalContext);
-  const scanService = appService.children.get('scan');
-  const vcService = appService.children.get('vc');
+  const scanService = appService.children.get('scan')!!;
+  const vcMetaService = appService.children.get('vcMeta')!!;
 
   const shareableVcsMetadata = useSelector(
-    vcService,
+    vcMetaService,
     selectShareableVcsMetadata,
   );
 
@@ -73,6 +76,12 @@ export function useScanScreen() {
   type ScanScreenNavigation = NavigationProp<MainBottomTabParamList>;
   const navigation = useNavigation<ScanScreenNavigation>();
   const GOTO_HOME = () => navigation.navigate(BOTTOM_TAB_ROUTES.home);
+  const ALLOWED = () => scanService.send(ScanEvents.ALLOWED());
+  const DENIED = () => scanService.send(ScanEvents.DENIED());
+  const isLocalPermissionRational = useSelector(
+    scanService,
+    selectIsLocationPermissionRationale,
+  );
   return {
     locationError,
     isEmpty: !shareableVcsMetadata.length,
@@ -85,6 +94,11 @@ export function useScanScreen() {
     isReadyForBluetoothStateCheck,
     isMinimumStorageRequiredForAuditEntryLimitReached,
     isScanning: useSelector(scanService, selectIsScanning),
+    isQuickShareDone: useSelector(scanService, selectIsQuickShareDone),
+    showQuickShareSuccessBanner: useSelector(
+      scanService,
+      selectShowQuickShareSuccessBanner,
+    ),
     selectIsInvalid: useSelector(scanService, selectIsInvalid),
     isQrLogin: useSelector(scanService, selectIsShowQrLogin),
     isQrLoginstoring: useSelector(scanService, selectIsQrLoginStoring),
@@ -92,9 +106,14 @@ export function useScanScreen() {
     LOCATION_REQUEST: () => scanService.send(ScanEvents.LOCATION_REQUEST()),
     GOTO_SETTINGS: () => scanService.send(ScanEvents.GOTO_SETTINGS()),
     DISMISS: () => scanService.send(ScanEvents.DISMISS()),
+    DISMISS_QUICK_SHARE_BANNER: () =>
+      scanService.send(ScanEvents.DISMISS_QUICK_SHARE_BANNER()),
     START_PERMISSION_CHECK: () =>
       scanService.send(ScanEvents.START_PERMISSION_CHECK()),
     SCAN: (qrCode: string) => scanService.send(ScanEvents.SCAN(qrCode)),
     GOTO_HOME,
+    ALLOWED,
+    DENIED,
+    isLocalPermissionRational,
   };
 }

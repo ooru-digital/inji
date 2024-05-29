@@ -2,10 +2,16 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import RNSecureStorage, {ACCESSIBLE} from 'react-native-secure-key-store';
 import {CloudStorage, CloudStorageScope} from 'react-native-cloud-storage';
 import {GOOGLE_ANDROID_CLIENT_ID} from 'react-native-dotenv';
 import {readFile, writeFile} from 'react-native-fs';
 import {BackupDetails} from '../types/backup-and-restore/backup';
+import {
+  AppleButton,
+  appleAuth,
+} from '@invertase/react-native-apple-authentication';
+import jwt_decode from 'jwt-decode';
 import {bytesToMB, sleep} from './commonUtil';
 import {
   IOS_SIGNIN_FAILED,
@@ -14,7 +20,6 @@ import {
   NETWORK_REQUEST_FAILED,
 } from './constants';
 import fileStorage, {backupDirectoryPath, zipFilePath} from './fileStorage';
-import {request} from './request';
 import {API} from './api';
 
 class Cloud {
@@ -69,9 +74,13 @@ class Cloud {
       const dateB = new Date(Number(b.split('.')[0].split('_')[1]));
       return dateB > dateA ? 1 : dateB < dateA ? -1 : 0;
     });
-    return sortedFiles[0];
+    return `/${sortedFiles[0]}`;
   };
 
+  /**
+   * This method is specific to iOS for downloading files from iCloud, which can be processed after
+   * Ref - https://react-native-cloud-storage.vercel.app/docs/api/CloudStorage#downloadfilepath-scope
+   */
   private static async syncBackupFiles() {
     const isSyncDone = await this.downloadUnSyncedBackupFiles();
     if (isSyncDone) return;
@@ -87,20 +96,23 @@ class Cloud {
       const tokenResult = await GoogleSignin.getTokens();
 
       try {
-        request(
-          'GET',
-          `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokenResult.accessToken}`,
-          undefined,
-          '',
-        );
+        await API.getGoogleAccountProfileInfo(tokenResult.accessToken);
         return tokenResult.accessToken;
       } catch (error) {
         console.error('Error while using the current token ', error);
         if (
+          error.toString().includes('401') &&
+          error.toString().includes('UNAUTHENTICATED')
+        ) {
+          await GoogleSignin.revokeAccess();
+          await GoogleSignin.signOut();
+        } else if (
           error.toString().includes('401') ||
           error.toString().includes('Unauthorized')
         ) {
           return await refreshToken(tokenResult);
+        } else if (this.isNetworkError(error)) {
+          throw new Error(NETWORK_REQUEST_FAILED);
         }
         throw error;
       }
@@ -122,7 +134,39 @@ class Cloud {
 
   static async signIn(): Promise<SignInResult | IsIOSResult> {
     if (isIOS()) {
-      return {isIOS: true};
+      let profileInfo;
+
+      // start a login request
+      try {
+        const appleAuthRequestResponse = await appleAuth.performRequest({
+          requestedOperation: appleAuth.Operation.LOGIN,
+          requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+        });
+        const {email, nonce, identityToken, realUserStatus /* etc */} =
+          appleAuthRequestResponse;
+        profileInfo = {email: email, picture: null};
+        await RNSecureStorage.set(
+          'userIdentifier',
+          JSON.stringify(appleAuthRequestResponse),
+          {accessible: ACCESSIBLE.WHEN_UNLOCKED},
+        );
+
+        return {status: this.status.SUCCESS, profileInfo: profileInfo};
+      } catch (error) {
+        if (error.code === appleAuth.Error.CANCELED) {
+          console.warn('User canceled Apple Sign in.');
+          return {
+            status: this.status.DECLINED,
+            error,
+          };
+        } else {
+          console.error(error);
+          return {
+            status: this.status.FAILURE,
+            error,
+          };
+        }
+      }
     }
     this.configure();
     try {
@@ -148,6 +192,8 @@ class Cloud {
           status: this.status.DECLINED,
           error,
         };
+      } else if (this.isNetworkError(error)) {
+        error = NETWORK_REQUEST_FAILED;
       }
       return {
         status: this.status.FAILURE,
@@ -160,9 +206,30 @@ class Cloud {
     try {
       if (isIOS()) {
         const isSignedIn = await CloudStorage.isCloudAvailable();
-        return {
-          isSignedIn,
-        };
+
+        const userIdentifier = await RNSecureStorage.get('userIdentifier');
+        const userToken = JSON.parse(userIdentifier + '');
+        const user = userToken.user;
+        const email = userToken.email;
+
+        const credentialState = await appleAuth.getCredentialStateForUser(user);
+        const profileInfo = {email: email, picture: undefined};
+        if (
+          credentialState === appleAuth.State.AUTHORIZED &&
+          isSignedIn === true
+        ) {
+          return {
+            isSignedIn: true,
+            isAuthorised: true,
+            profileInfo: profileInfo,
+          };
+        } else {
+          return {
+            isSignedIn: false,
+            isAuthorised: true,
+            profileInfo: profileInfo,
+          };
+        }
       }
       this.configure();
       const isSignedIn = await GoogleSignin.isSignedIn();
@@ -172,12 +239,14 @@ class Cloud {
         return {
           isSignedIn: true,
           profileInfo,
+          isAuthorised: true,
         };
       } else {
         const profileInfo = await this.profileInfo();
         return {
           isSignedIn: true,
           profileInfo,
+          isAuthorised: true,
         };
       }
     } catch (error) {
@@ -186,15 +255,12 @@ class Cloud {
         error,
       );
       let errorReason: null | string = null;
-      if (
-        error.toString() === 'Error: NetworkError' ||
-        error.toString() === ' Error: NetworkError'
-      )
-        errorReason = NETWORK_REQUEST_FAILED;
+      if (this.isNetworkError(error)) errorReason = NETWORK_REQUEST_FAILED;
       //TODO: resolve and reject promise so it can be handled in onError
       return {
         error: errorReason || error,
         isSignedIn: false,
+        isAuthorised: false,
       };
     }
   }
@@ -317,10 +383,7 @@ class Cloud {
       console.log(
         `Error occurred while cloud upload.. retrying ${retryCounter} : Error : ${error}`,
       );
-      if (
-        error.toString() === 'Error: NetworkError' ||
-        error.toString() === ' Error: NetworkError'
-      ) {
+      if (this.isNetworkError(error)) {
         uploadError = NETWORK_REQUEST_FAILED;
       } else {
         uploadError = error;
@@ -381,9 +444,9 @@ class Cloud {
       // return the path
       return Promise.resolve(fileName.split('.zip')[0]);
     } catch (error) {
-      console.log('error while downloading backup file ', error);
+      console.error('error while downloading backup file ', error);
       let downloadError;
-      if (error.toString() === 'Error: NetworkError') {
+      if (this.isNetworkError(error)) {
         downloadError = NETWORK_REQUEST_FAILED;
       } else if (
         error.code?.toString() === 'ERR_DIRECTORY_NOT_FOUND' ||
@@ -396,13 +459,24 @@ class Cloud {
       return Promise.reject({error: downloadError});
     }
   }
+
+  private static isNetworkError(error: Error): boolean {
+    if (
+      error.toString().includes('NETWORK_ERROR') ||
+      error.toString().includes('Network Error') ||
+      error.toString().includes('NetworkError') ||
+      error.toString().includes(NETWORK_REQUEST_FAILED)
+    )
+      return true;
+    return false;
+  }
 }
 
 export default Cloud;
 
 export type ProfileInfo = {
   email: string;
-  picture: string;
+  picture: string | undefined;
 };
 
 export type SignInResult = {
@@ -419,6 +493,7 @@ export type isSignedInResult = {
   isSignedIn: boolean;
   error?: string | null;
   profileInfo?: ProfileInfo;
+  isAuthorised?: boolean;
 };
 
 export type CloudUploadResult = {

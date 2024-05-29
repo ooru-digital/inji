@@ -17,6 +17,8 @@
                     <include name="noPreDownloadedVCAndNoHistoryInFreshInstallation"/>
                     <include name="verifyInvalidOtpMessage"/>
                     <include name="activateVcFromDetailedViewPage"/>
+                    <include name="verifyActiveVcAndWaitForOtpTimeOut"/>
+                    <include name="downloadAndActiveVcUsingUinViaEsignet"/>
                 </methods>
             </class>
             <class name="iosTestCases.ChangeLanguageTest">
@@ -34,21 +36,7 @@
                     <include name="changeLanguageToKannadAndcheckInjiTour"/>
                     <include name="DownladvcAndVerifyInArabicAndHindiLanguage"/>
                     <include name="DownloadAndVerifyVcInArabic"/>
-                </methods>
-            </class>
-            <class name="iosTestCases.CredentialRegistryTest">
-                <methods>
-                    <include name="downloadAndVerifyVcInNewEnv"/>
-                    <include name="cancelChangeEnvAndVerify"/>
-                    <include name="downloadAndVerifyVcInInvalidEnv"/>
-                    <include name="generateUinInNewEnv"/>
-                    <include name="retrivingUinInOtherEnv"/>
-                    <include name="downloadAndVerifyVcInTwoEnv"/>
-                    <include name="downloadVcAndActivateItInOtherEnv"/>
-                    <include name="downloadAndVerifyVcInNewEnvForEsignet"/>
-                    <include name="downloadAndVerifyVcInInvalidEnvForEsignet"/>
-                    <include name="downloadAndVerifyVcInInvalidEnvForEsignetInFillpino"/>
-                    <include name="downloadVcInNewEnvAndVerifyInDetailedVcViewPage"/>
+                    <include name="downloadVcAndChnageLangaugeVerifyVcViaSunbird"/>
                 </methods>
             </class>
             <class name="iosTestCases.DeletingVcTest">
@@ -56,12 +44,32 @@
                     <include name="deleteVcAndVerifyInHistory"/>
                     <include name="cancelDeleteVc"/>
                     <include name="DownloadingDeletedVc"/>
+                    <include name="deleteVcAndVerifyInHistoryForEsignet"/>
+                    <include name="deleteVcAndVerifyInHistoryForSunbird"/>
                 </methods>
             </class>
             <class name="iosTestCases.GenerateUinOrVidTest">
                 <methods>
                     <include name="generateUinOrVidUsingAid"/>
                     <include name="goBackToGenerateUinOrVidUsingAidFromOtpVerificationPage"/>
+                    <include name="generateUinOrVidUsingInvalidAid"/>
+                </methods>
+            </class>
+            <class name="iosTestCases.PinVcTest">
+                <methods>
+                    <include name="pinVc"/>
+                    <include name="VerifyCameraOpenAfterPinVc"/>
+                    <include name="downloadVcViaEsignetAndPinUnpin"/>
+                    <include name="verifyMessageAfterDenyBluetoothPopup"/>
+                    <include name="pinEsignetVcMultipleTimes"/>
+                    <include name="pinMosipVcMultipleTimes"/>
+                    <include name="pinVcInDetailedVcView"/>
+                </methods>
+            </class>
+            <class name="iosTestCases.ShareVcTest">
+                <methods>
+                    <include name="noCardsAvailableToShare"/>
+                    <include name="verifyReceivedCardTabPresent"/>
                 </methods>
             </class>
             <class name="iosTestCases.NoNetworkIosTest">
@@ -76,20 +84,9 @@
                     <include name="verifyRecivedCardOffline"/>
                     <include name="downloadCardWithoutInternetRetryWithInternet"/>
                     <include name="verifyVcIssuerListWithoutNetwork"/>
-                </methods>
-            </class>
-            <class name="iosTestCases.PinVcTest">
-                <methods>
-                    <include name="pinVc"/>
-                    <include name="VerifyCameraOpenAfterPinVc"/>
-                    <include name="downloadVcViaEsignetAndPinUnpin"/>
-                    <include name="verifyMessageAfterDenyBluetoothPopup"/>
-                </methods>
-            </class>
-            <class name="iosTestCases.ShareVcTest">
-                <methods>
-                    <include name="noCardsAvailableToShare"/>
-                    <include name="verifyReceivedCardTabPresent"/>
+                    <include name="DownloadVcWithUinWithoutNetwork"/>
+                    <include name="DownloadVcWithEsignetWithoutNetwork"/>
+                    <include name="verifyGetUinHeaderOffline"/>
                 </methods>
             </class>
             <class name="iosTestCases.UnlockWithPasscodeTest">
@@ -103,6 +100,8 @@
                     <include name="downloadAndVerifyVcUsingUinViaEsignet"/>
                     <include name="downloadAndVerifyVcUsingVidViaEsignet"/>
                     <include name="denyPopupforEsignetLoginWebPage"/>
+                    <include name="downloadMultipleVcViaEsignet"/>
+
                 </methods>
             </class>
             <class name="iosTestCases.VcDownloadAndVerifyUsingSunbirdTest">
@@ -118,6 +117,8 @@
                     <include name="generateMultipleVcWithSameUin"/>
                     <include name="verifyInvalidUinErrorMessage"/>
                     <include name="verifyOtpTimeOutAndGoBack"/>
+                    <include name="downloadMultipleCardsAndVerifySearch"/>
+                    <include name="downloadCardsAndVerifySearch"/>
                 </methods>
             </class>
             <class name="iosTestCases.VcDownloadAndVerifyUsingVidTest">
@@ -141,6 +142,8 @@
                     <include name="activateVcAndVerifyInHistory"/>
                     <include name="downloadAndVerifyHistoryUsingUinViaEsignet"/>
                     <include name="downloadAndVerifyHistoryUsingVidViaEsignet"/>
+                    <include name="downloadAndVerifyHistoryForSunbird"/>
+                    <include name="downloadVcAndVerifyActivityLog"/>
                 </methods>
             </class>
             <class name="iosTestCases.VerifyWelcomePagesTest">

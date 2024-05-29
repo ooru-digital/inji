@@ -1,14 +1,11 @@
 import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {DeviceInfoList} from '../../components/DeviceInfoList';
-import {Button, Column, Row, Text} from '../../components/ui';
+import {Button, Column, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {useReceiveVcScreen} from './ReceiveVcScreenController';
 import {VerifyIdentityOverlay} from '../VerifyIdentityOverlay';
-import {
-  ErrorMessageOverlay,
-  MessageOverlay,
-} from '../../components/MessageOverlay';
+import {MessageOverlay} from '../../components/MessageOverlay';
 import {useOverlayVisibleAfterTimeout} from '../../shared/hooks/useOverlayVisibleAfterTimeout';
 import {VcDetailsContainer} from '../../components/VC/VcDetailsContainer';
 import {SharingStatusModal} from '../Scan/SharingStatusModal';
@@ -34,7 +31,8 @@ export const ReceiveVcScreen: React.FC = () => {
               {t('header')}
             </Text>
             <VcDetailsContainer
-              vc={controller.incomingVc}
+              credential={controller.credential}
+              verifiableCredentialData={controller.verifiableCredentialData}
               isBindingPending={false}
               activeTab={1}
             />
@@ -50,36 +48,16 @@ export const ReceiveVcScreen: React.FC = () => {
       )}
 
       <VerifyIdentityOverlay
-        vc={controller.incomingVc}
-        isVisible={controller.isVerifyingIdentity}
+        credential={controller.selectCredential}
+        verifiableCredentialData={controller.verifiableCredentialData}
+        isVerifyingIdentity={controller.isVerifyingIdentity}
         onCancel={controller.CANCEL}
         onFaceValid={controller.FACE_VALID}
         onFaceInvalid={controller.FACE_INVALID}
+        isInvalidIdentity={controller.isInvalidIdentity}
+        onDismiss={controller.DISMISS}
+        onRetryVerification={controller.RETRY_VERIFICATION}
       />
-
-      <MessageOverlay
-        isVisible={controller.isInvalidIdentity}
-        title={t('VerifyIdentityOverlay:errors.invalidIdentity.title')}
-        message={t('VerifyIdentityOverlay:errors.invalidIdentity.message')}
-        minHeight={'auto'}
-        // DOUBT^: when does the above message show up in verifier device if it's never communicated explicitly?
-        onBackdropPress={controller.DISMISS}>
-        <Row>
-          <Button
-            fill
-            type="clear"
-            title={t('common:dismiss')}
-            onPress={controller.DISMISS}
-            margin={[0, 8, 0, 0]}
-          />
-          <Button
-            testID="tryAgain"
-            fill
-            title={t('common:tryAgain')}
-            onPress={controller.RETRY_VERIFICATION}
-          />
-        </Row>
-      </MessageOverlay>
 
       <MessageOverlay
         isVisible={savingOverlayVisible}

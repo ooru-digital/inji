@@ -13,6 +13,9 @@ public class RetrieveIdPage extends BasePage {
 	@iOSXCUITFindBy(accessibility = "retrieveIdHeader")
 	private WebElement retrieveIdText;
 
+	@AndroidFindBy(uiAutomator = "new UiSelector().textContains(\"Allow\")")
+	private WebElement allowButton;
+
 	@AndroidFindBy(accessibility = "idInputModalIndividualId")
 	@iOSXCUITFindBy(accessibility = "idInputModalIndividualId")
 	private WebElement enterIdTextBox;
@@ -38,12 +41,16 @@ public class RetrieveIdPage extends BasePage {
 	private WebElement invalidUin;
 
 	@AndroidFindBy(xpath = "//*[contains(@text,'Please enter valid UIN')]")
-	@iOSXCUITFindBy(accessibility = "idInputModalIndividualId")
+	@iOSXCUITFindBy(accessibility = "Please enter valid UIN")
 	private WebElement inputFormatErrorMessageUin;
 
 	@AndroidFindBy(xpath = "//*[contains(@text,'Please enter valid VID')]")
-	@iOSXCUITFindBy(accessibility = "idInputModalIndividualId")
+	@iOSXCUITFindBy(accessibility = "Please enter valid VID")
 	private WebElement inputFormatErrorMessageVid;
+
+	@AndroidFindBy(xpath = "//*[contains(@text,'Please enter valid AID')]")
+	@iOSXCUITFindBy(accessibility = "idInputModalIndividualId")
+	private WebElement inputFormatErrorMessageAid;
 
 	@AndroidFindBy(xpath = "//*[contains(@text,'AID is not ready yet')]")
 	@iOSXCUITFindBy(accessibility = "AID is not ready yet")
@@ -81,6 +88,12 @@ public class RetrieveIdPage extends BasePage {
 		return this;
 	}
 
+	public RetrieveIdPage acceptPermissionPopupBluetooth() {
+		if (isElementDisplayed(allowButton)) {
+			clickOnElement(allowButton);
+		}
+		return this;
+	}
 	public OtpVerificationPage clickOnGenerateCardButton() {
 		this.clickOnElement(generateCardButton);
 		return new OtpVerificationPage(driver);
@@ -141,5 +154,9 @@ public class RetrieveIdPage extends BasePage {
 
 	public boolean isIncorrectInputFormatErrorVidMessageDisplayed() {
 		return isElementDisplayed(inputFormatErrorMessageVid);
+	}
+
+	public boolean isIncorrectInputFormatErrorAidMessageDisplayed() {
+		return isElementDisplayed(inputFormatErrorMessageAid);
 	}
 }

@@ -9,7 +9,7 @@ import {
 } from 'xstate';
 import {createModel} from 'xstate/lib/model';
 import {BackendResponseError, request} from '../../../shared/request';
-import {VcIdType} from '../../../types/VC/ExistingMosipVC/vc';
+import {VcIdType} from '../../../machines/VerifiableCredential/VCMetaMachine/vc';
 import i18n from '../../../i18n';
 import {VCMetadata} from '../../../shared/VCMetadata';
 import {
@@ -209,7 +209,7 @@ export const AddVcModalMachine =
                 src: 'requestOtp',
                 onDone: [
                   {
-                    target: 'idle',
+                    target: '#AddVcModal.acceptingOtpInput',
                     actions: ['setPhoneNumber', 'setEmail'],
                   },
                 ],

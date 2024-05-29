@@ -1,6 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {MessageOverlay} from '../../components/MessageOverlay';
+import {
+  ErrorMessageOverlay,
+  MessageOverlay,
+} from '../../components/MessageOverlay';
 import {QrScanner} from '../../components/QrScanner';
 import {Button, Centered, Column, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
@@ -12,6 +15,7 @@ import {isIOS} from '../../shared/constants';
 import {BannerNotificationContainer} from '../../components/BannerNotificationContainer';
 import {SharingStatusModal} from './SharingStatusModal';
 import {SvgImage} from '../../components/ui/svg';
+import {LocationPermissionRational} from './LocationPermissionRational';
 
 export const ScanScreen: React.FC = () => {
   const {t} = useTranslation('ScanScreen');
@@ -35,6 +39,10 @@ export const ScanScreen: React.FC = () => {
     if (controller.isStartPermissionCheck && !controller.isEmpty)
       controller.START_PERMISSION_CHECK();
   });
+
+  useEffect(() => {
+    if (controller.isQuickShareDone) controller.GOTO_HOME();
+  }, [controller.isQuickShareDone]);
 
   const openSettings = () => {
     Linking.openSettings();
@@ -152,6 +160,14 @@ export const ScanScreen: React.FC = () => {
     ) {
       return bluetoothIsOffText();
     }
+    if (controller.isLocalPermissionRational) {
+      return (
+        <LocationPermissionRational
+          onConfirm={controller.ALLOWED}
+          onCancel={controller.DENIED}
+        />
+      );
+    }
     if (controller.isLocationDisabled || controller.isLocationDenied) {
       return allowLocationComponent();
     }
@@ -167,14 +183,14 @@ export const ScanScreen: React.FC = () => {
   function displayStorageLimitReachedError(): React.ReactNode {
     return (
       !controller.isEmpty && (
-        <MessageOverlay
+        <ErrorMessageOverlay
           testID="storageLimitReachedError"
           isVisible={
             controller.isMinimumStorageRequiredForAuditEntryLimitReached
           }
           translationPath={'ScanScreen'}
           error="errors.storageLimitReached"
-          onBackdropPress={controller.GOTO_HOME}
+          onDismiss={controller.GOTO_HOME}
         />
       )
     );

@@ -1,61 +1,70 @@
 import {useSelector} from '@xstate/react';
 import {useContext, useState} from 'react';
 import {ActorRefFrom} from 'xstate';
-import {selectShareableVcsMetadata} from '../../machines/VCItemMachine/vc';
-import {ExistingMosipVCItemMachine} from '../../machines/VCItemMachine/ExistingMosipVCItem/ExistingMosipVCItemMachine';
+import {selectShareableVcsMetadata} from '../../machines/VerifiableCredential/VCMetaMachine/VCMetaSelectors';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {
+  selectCredential,
   selectIsSelectingVc,
   selectReceiverInfo,
-  selectSelectedVc,
   selectVcName,
+  selectVerifiableCredentialData,
 } from '../../machines/bleShare/scan/selectors';
 import {
   selectIsCancelling,
   selectIsInvalidIdentity,
   selectIsVerifyingIdentity,
 } from '../../machines/bleShare/commonSelectors';
-import {ScanEvents} from '../../machines/bleShare/scan/scanMachine';
+import {
+  ScanEvents,
+  selectIsFaceVerificationConsent,
+} from '../../machines/bleShare/scan/scanMachine';
+import {VCShareFlowType} from '../../shared/Utils';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {RootRouteProps} from '../../routes';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
+import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
+import {Theme} from '../../components/ui/styleUtils';
 
 type MyVcsTabNavigation = NavigationProp<RootRouteProps>;
 
+const changeTabBarVisible = (visible: string) => {
+  Theme.BottomTabBarStyle.tabBarStyle.display = visible;
+};
+
 export function useSendVcScreen() {
   const {appService} = useContext(GlobalContext);
-  const scanService = appService.children.get('scan');
-  const vcService = appService.children.get('vc');
+  const scanService = appService.children.get('scan')!!;
+  const vcMetaService = appService.children.get('vcMeta')!!;
   const navigation = useNavigation<MyVcsTabNavigation>();
-
-  const CANCEL = () => scanService.send(ScanEvents.CANCEL());
 
   const [selectedIndex, setSelectedIndex] = useState<number>(null);
 
   return {
     selectedIndex,
-    TOGGLE_USER_CONSENT: () =>
-      scanService.send(ScanEvents.TOGGLE_USER_CONSENT()),
-    SELECT_VC_ITEM:
-      (index: number) =>
-      (vcRef: ActorRefFrom<typeof ExistingMosipVCItemMachine>) => {
-        setSelectedIndex(index);
-        const {serviceRefs, ...vcData} = vcRef.getSnapshot().context;
-        scanService.send(ScanEvents.SELECT_VC(vcData));
-      },
-
     receiverInfo: useSelector(scanService, selectReceiverInfo),
     vcName: useSelector(scanService, selectVcName),
-    shareableVcsMetadata: useSelector(vcService, selectShareableVcsMetadata),
-    selectedVc: useSelector(scanService, selectSelectedVc),
-
+    shareableVcsMetadata: useSelector(
+      vcMetaService,
+      selectShareableVcsMetadata,
+    ),
     isSelectingVc: useSelector(scanService, selectIsSelectingVc),
     isVerifyingIdentity: useSelector(scanService, selectIsVerifyingIdentity),
     isInvalidIdentity: useSelector(scanService, selectIsInvalidIdentity),
     isCancelling: useSelector(scanService, selectIsCancelling),
-
-    CANCEL,
+    isFaceVerificationConsent: useSelector(
+      scanService,
+      selectIsFaceVerificationConsent,
+    ),
+    credential: useSelector(scanService, selectCredential),
+    verifiableCredentialData: useSelector(
+      scanService,
+      selectVerifiableCredentialData,
+    ),
+    CANCEL: () => scanService.send(ScanEvents.CANCEL()),
     ACCEPT_REQUEST: () => scanService.send(ScanEvents.ACCEPT_REQUEST()),
+    FACE_VERIFICATION_CONSENT: (isConsentGiven: boolean) =>
+      scanService.send(ScanEvents.FACE_VERIFICATION_CONSENT(isConsentGiven)),
     VERIFY_AND_ACCEPT_REQUEST: () =>
       scanService.send(ScanEvents.VERIFY_AND_ACCEPT_REQUEST()),
     DISMISS: () => scanService.send(ScanEvents.DISMISS()),
@@ -66,6 +75,15 @@ export function useSendVcScreen() {
     RETRY_VERIFICATION: () => scanService.send(ScanEvents.RETRY_VERIFICATION()),
     GO_TO_HOME: () => {
       navigation.navigate(BOTTOM_TAB_ROUTES.home, {screen: 'HomeScreen'});
+      changeTabBarVisible('flex');
     },
+    SELECT_VC_ITEM:
+      (index: number) => (vcRef: ActorRefFrom<typeof VCItemMachine>) => {
+        setSelectedIndex(index);
+        const {serviceRefs, ...vcData} = vcRef.getSnapshot().context;
+        scanService.send(
+          ScanEvents.SELECT_VC(vcData, VCShareFlowType.SIMPLE_SHARE),
+        );
+      },
   };
 }

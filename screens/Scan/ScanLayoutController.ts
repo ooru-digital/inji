@@ -20,7 +20,10 @@ import {
   selectIsSendingVcTimeout,
   selectIsSent,
   selectIsDone,
+  selectFlowType,
   selectIsFaceIdentityVerified,
+  selectCredential,
+  selectVerifiableCredentialData,
 } from '../../machines/bleShare/scan/selectors';
 import {
   selectBleError,
@@ -29,13 +32,16 @@ import {
   selectIsExchangingDeviceInfo,
   selectIsExchangingDeviceInfoTimeout,
   selectIsHandlingBleError,
+  selectIsInvalidIdentity,
   selectIsOffline,
   selectIsRejected,
   selectIsReviewing,
+  selectIsVerifyingIdentity,
 } from '../../machines/bleShare/commonSelectors';
 import {ScanEvents} from '../../machines/bleShare/scan/scanMachine';
 import {BOTTOM_TAB_ROUTES, SCAN_ROUTES} from '../../routes/routesConstants';
 import {ScanStackParamList} from '../../routes/routesConstants';
+import {VCShareFlowType} from '../../shared/Utils';
 import {Theme} from '../../components/ui/styleUtils';
 
 type ScanLayoutNavigation = NavigationProp<
@@ -51,13 +57,24 @@ const changeTabBarVisible = (visible: string) => {
 export function useScanLayout() {
   const {t} = useTranslation('ScanScreen');
   const {appService} = useContext(GlobalContext);
-  const scanService = appService.children.get('scan');
+  const scanService = appService.children.get('scan')!!;
   const navigation = useNavigation<ScanLayoutNavigation>();
 
   const isLocationDisabled = useSelector(scanService, selectIsLocationDisabled);
   const isLocationDenied = useSelector(scanService, selectIsLocationDenied);
   const isBleError = useSelector(scanService, selectIsHandlingBleError);
+  const isInvalidIdentity = useSelector(scanService, selectIsInvalidIdentity);
+  const flowType = useSelector(scanService, selectFlowType);
+  const isVerifyingIdentity = useSelector(
+    scanService,
+    selectIsVerifyingIdentity,
+  );
   const bleError = useSelector(scanService, selectBleError);
+  const credential = useSelector(scanService, selectCredential);
+  const verifiableCredentialData = useSelector(
+    scanService,
+    selectVerifiableCredentialData,
+  );
 
   const locationError = {message: '', button: ''};
 
@@ -71,6 +88,8 @@ export function useScanLayout() {
 
   const DISMISS = () => scanService.send(ScanEvents.DISMISS());
   const CANCEL = () => scanService.send(ScanEvents.CANCEL());
+  const FACE_VALID = () => scanService.send(ScanEvents.FACE_VALID());
+  const FACE_INVALID = () => scanService.send(ScanEvents.FACE_INVALID());
   const CLOSE_BANNER = () => scanService.send(ScanEvents.CLOSE_BANNER());
   const onStayInProgress = () =>
     scanService.send(ScanEvents.STAY_IN_PROGRESS());
@@ -85,6 +104,8 @@ export function useScanLayout() {
     changeTabBarVisible('flex');
     navigation.navigate(BOTTOM_TAB_ROUTES.history);
   };
+  const RETRY_VERIFICATION = () =>
+    scanService.send(ScanEvents.RETRY_VERIFICATION());
 
   const isInvalid = useSelector(scanService, selectIsInvalid);
   const isConnecting = useSelector(scanService, selectIsConnecting);
@@ -241,7 +262,11 @@ export function useScanLayout() {
     if (isDone) {
       changeTabBarVisible('flex');
       navigation.navigate(BOTTOM_TAB_ROUTES.home);
-    } else if (isReviewing) {
+    } else if (
+      isReviewing &&
+      flowType === VCShareFlowType.SIMPLE_SHARE &&
+      !isAccepted
+    ) {
       changeTabBarVisible('none');
       navigation.navigate(SCAN_ROUTES.SendVcScreen);
     } else if (isScanning) {
@@ -251,10 +276,21 @@ export function useScanLayout() {
       changeTabBarVisible('flex');
       navigation.navigate(BOTTOM_TAB_ROUTES.history);
     }
-  }, [isDone, isReviewing, isScanning, isQrLoginDone, isBleError]);
+  }, [
+    isDone,
+    isReviewing,
+    isScanning,
+    isQrLoginDone,
+    isBleError,
+    flowType,
+    isAccepted,
+  ]);
 
   return {
+    credential,
+    verifiableCredentialData,
     isInvalid,
+    isReviewing,
     isDone,
     GOTO_HOME,
     GOTO_HISTORY,
@@ -270,6 +306,12 @@ export function useScanLayout() {
     onRetry,
     CANCEL,
     isSendingVc,
+    flowType,
+    isVerifyingIdentity,
+    isInvalidIdentity,
+    FACE_INVALID,
+    FACE_VALID,
+    RETRY_VERIFICATION,
     isFaceIdentityVerified,
     CLOSE_BANNER,
   };
