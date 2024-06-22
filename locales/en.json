@@ -91,6 +91,7 @@
     "shareWithSelfie": "Vote with Face Auth",
     "offlineAuthDisabledMessage": "Click here to enable this credentials to be used for online authentication.",
     "viewActivityLog": "View Activity Log",
+    "voteWithFingerAuth": "Vote with Finger Auth",
     "removeFromWallet": "Remove from Voters list"
   },
   "WalletBinding": {
@@ -538,6 +539,7 @@
     "doNotAskMessage": "Don't ask me again",
     "noShareableVcs": "No shareable cards are available.",
     "sharingVc": "Sharing card",
+    "authenticateId": "Authenticate ID",
     "bluetoothStateIos": "Bluetooth is turned OFF, please turn it ON from Control center",
     "bluetoothStateAndroid": "Bluetooth is turned OFF, please turn it ON from Quick settings menu",
     "enableBluetoothMessage": "Please enable bluetooth permissions to support local sharing",
@@ -680,6 +682,8 @@
     "reasonForSharing": "Reason for sharing (optional)",
     "acceptRequest": "Share",
     "acceptRequestAndVerify": "Vote",
+    "authWithFingerPrint": "Fingerprint Auth",
+    "authWithFace": "Face Auth",
     "reject": "Reject",
     "consentToPhotoVerification": "I give consent to have my photo taken for authentication",
     "pleaseSelectAnId": "Please select an ID",
