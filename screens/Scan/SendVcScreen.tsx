@@ -107,7 +107,8 @@ export const SendVcScreen: React.FC = () => {
           ) !== -1 && (
             <Button
               type="gradient"
-              title={t('acceptRequestAndVerify')}
+              //title={t('acceptRequestAndVerify')}
+              title={t('authWithFingerPrint')}
               styles={{marginTop: 12}}
               disabled={controller.selectedIndex == null}
               onPress={controller.VERIFY_AND_ACCEPT_REQUEST}
@@ -117,7 +118,8 @@ export const SendVcScreen: React.FC = () => {
           <Button
             type="gradient"
             styles={{marginTop: 12}}
-            title={t('acceptRequest')}
+            // title={t('acceptRequest')}
+            title={t('authWithFace')}
             disabled={controller.selectedIndex == null}
             onPress={controller.ACCEPT_REQUEST}
           />

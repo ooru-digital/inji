@@ -242,6 +242,12 @@ android {
             }
         }
     }
+    packagingOptions {
+      pickFirst 'lib/arm64-v8a/liblog.so'
+      pickFirst 'lib/armeabi-v7a/liblog.so'
+      pickFirst 'lib/x86/liblog.so'
+      pickFirst 'lib/x86_64/liblog.so'
+    }
 }
 
 dependencies {
@@ -293,6 +299,7 @@ dependencies {
         implementation jscFlavor
     }
     implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation fileTree(dir: "libs", include: ["*.jar"])
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
