@@ -33,7 +33,7 @@ import {
 } from '../../machines/settings';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
 import {VcMetaEvents} from '../../machines/VerifiableCredential/VCMetaMachine/VCMetaMachine';
-
+import {selectIDfromScanSearch} from '../../machines/bleShare/scan/scanMachine';
 export function useMyVcsTab(props: HomeScreenTabProps) {
   const service = props.service as ActorRefFrom<typeof MyVcsTabMachine>;
   const {appService} = useContext(GlobalContext);
@@ -68,6 +68,7 @@ export function useMyVcsTab(props: HomeScreenTabProps) {
       vcMetaService,
       selectVerificationErrorMessage,
     ),
+    setScanSearchID: useSelector(service, selectIDfromScanSearch),
 
     SET_STORE_VC_ITEM_STATUS: () =>
       service.send(MyVcsTabEvents.SET_STORE_VC_ITEM_STATUS()),
