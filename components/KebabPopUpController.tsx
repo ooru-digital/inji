@@ -27,6 +27,7 @@ import {
   VCItemMachine,
 } from '../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
 import {selectError} from '../machines/biometrics';
+import ODKIntentModule from '../lib/react-native-elements/ODKIntentModule';
 
 type ScanLayoutNavigation = NavigationProp<
   ScanStackParamList & MainBottomTabParamList
@@ -74,6 +75,18 @@ export function useKebabPopUp(props) {
     RESEND_OTP: () => service.send(VCItemEvents.RESEND_OTP()),
     GOTO_SCANSCREEN: () => {
       navigation.navigate(BOTTOM_TAB_ROUTES.share);
+    },
+    OPEN_TRUST_FINGER: () => {
+      ODKIntentModule.sendBundleResult({
+        // biometrics: subject.biometrics,
+        date_of_birth: '',
+        email: '',
+        full_name: '',
+        issuance_date: '',
+        issuer: '',
+        phone: '',
+        uin: '',
+      });
     },
     SELECT_VC_ITEM: (
       vcRef: ActorRefFrom<typeof VCItemMachine>,
