@@ -367,7 +367,7 @@
   },
   "MainLayout": {
     "home": "Home",
-    "share": "Scan",
+    "share": "Share",
     "history": "Logs",
     "request": "Request",
     "settings": "Settings"
