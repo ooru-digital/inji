@@ -82,6 +82,7 @@ const model = createModel(
     QrLoginRef: {} as ActorRefFrom<typeof qrLoginMachine>,
     showQuickShareSuccessBanner: false,
     linkCode: '',
+    idFromQRCode: '',
     quickShareData: {},
     showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
@@ -93,6 +94,7 @@ const model = createModel(
       SCAN: (params: string) => ({params}),
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
+      INITIALISE_AND_FINGERPRINT_AUTH: () => ({}),
       VC_ACCEPTED: () => ({}),
       VC_REJECTED: () => ({}),
       VC_SENT: () => ({}),
@@ -446,6 +448,11 @@ export const scanMachine =
                 actions: 'setQuickShareData',
               },
               {
+                target: 'getVCFromID',
+                cond: 'isHTTPQRCode',
+                actions: 'getIDFromQRCode', // add custom method that'll land on the page.
+              },
+              {
                 target: 'invalid',
               },
             ],
@@ -456,6 +463,14 @@ export const scanMachine =
           on: {
             STORE_RESPONSE: {
               target: 'loadVCS',
+            },
+          },
+        },
+        getVCFromID: {
+          entry: [() => console.log('I have reached to getVCFromID')],
+          on: {
+            STORE_RESPONSE: {
+              target: '.navigatingToHome',
             },
           },
         },
@@ -1053,6 +1068,9 @@ export const scanMachine =
           linkCode: (_, event) =>
             new URL(event.params).searchParams.get('linkCode'),
         }),
+        getIDFromQRCode: assign({
+          idFromQRCode: (_, event) => event.params.split('/').pop(),
+        }),
         setQuickShareData: assign({
           quickShareData: (_, event) =>
             JSON.parse(decodeData(event.params.split(DEFAULT_QR_HEADER)[1])),
@@ -1361,7 +1379,9 @@ export const scanMachine =
         showFaceAuthConsentScreen: context => {
           return context.showFaceAuthConsent;
         },
-
+        // sample: 'https://app.credissuer.com/524DBD7C4857'
+        isHTTPQRCode: (_context, event) =>
+          event.params.startsWith('https://app.credissuer.com'),
         // sample: 'OPENID4VP://connect:?name=OVPMOSIP&key=69dc92a2cc91f02258aa8094d6e2b62877f5b6498924fbaedaaa46af30abb364'
         isOpenIdQr: (_context, event) =>
           event.params.startsWith('OPENID4VP://'),
