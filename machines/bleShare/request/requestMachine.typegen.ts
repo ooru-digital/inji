@@ -69,6 +69,7 @@ export interface Typegen0 {
     sendVCReceivingDisconnectedEvent: 'DISCONNECT';
     sendVCReceivingStartEvent: 'CONNECTED';
     sendVCReceivingTerminatedEvent: 'CANCEL';
+    sendVcDataIntent: 'DISMISS';
     sendVcReceived: 'STORE_RESPONSE';
     setBleError: 'BLE_ERROR';
     setIncomingVc: 'VC_RECEIVED';
@@ -88,6 +89,7 @@ export interface Typegen0 {
   };
   eventsCausingGuards: {
     isMinimumStorageLimitReached: 'done.invoke.request.checkStorage:invocation[0]';
+    isRequestIntent: 'DISMISS';
   };
   eventsCausingServices: {
     advertiseDevice:

@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React, {useContext, useEffect} from 'react';
 import {
   BottomTabNavigationOptions,
   createBottomTabNavigator,
@@ -18,6 +18,8 @@ import {ScanEvents} from '../machines/bleShare/scan/scanMachine';
 import testIDProps from '../shared/commonUtil';
 import {SvgImage} from '../components/ui/svg';
 import {isIOS} from '../shared/constants';
+import {useSelector} from '@xstate/react';
+import {selectIsRequestIntent} from '../machines/app';
 
 const {Navigator, Screen} = createBottomTabNavigator();
 
@@ -33,6 +35,13 @@ export const MainLayout: React.FC<
     tabBarActiveTintColor: Theme.Colors.IconBg,
     ...Theme.BottomTabBarStyle,
   };
+
+  const isRequestIntent = useSelector(appService, selectIsRequestIntent);
+  useEffect(() => {
+    if (isRequestIntent) {
+      props.navigation.navigate('Request');
+    }
+  }, [isRequestIntent]);
 
   return (
     <Navigator
@@ -62,7 +71,7 @@ export const MainLayout: React.FC<
                 align="center"
                 crossAlign="center"
                 style={focused ? Theme.Styles.bottomTabIconStyle : null}>
-                {SvgImage[`${route.name}`](focused)}
+                {SvgImage[${route.name}](focused)}
               </Column>
             ),
             tabBarAccessibilityLabel: isIOS() ? t(route.name) : route.name,

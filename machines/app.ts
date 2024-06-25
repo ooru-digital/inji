@@ -33,6 +33,7 @@ import {
   vcMetaMachine,
 } from './VerifiableCredential/VCMetaMachine/VCMetaMachine';
 
+import ODKIntentModule from '../lib/react-native-elements/ODKIntentModule';
 const model = createModel(
   {
     info: {} as AppInfo,
@@ -40,6 +41,7 @@ const model = createModel(
     isReadError: false,
     isDecryptError: false,
     isKeyInvalidateError: false,
+    isRequestIntent: false,
   },
   {
     events: {
@@ -71,6 +73,9 @@ export const appMachine = model.createMachine(
     schema: {
       context: model.initialContext,
       events: {} as EventFrom<typeof model>,
+      services: {} as {
+        checkIntent: {data: boolean};
+      },
     },
     id: 'app',
     initial: 'init',
@@ -92,8 +97,17 @@ export const appMachine = model.createMachine(
     },
     states: {
       init: {
-        initial: 'store',
+        initial: 'intent',
         states: {
+          intent: {
+            invoke: {
+              src: 'checkIntent',
+              onDone: {
+                target: 'store',
+                actions: 'setIntent',
+              },
+            },
+          },
           store: {
             entry: ['spawnStoreActor', 'logStoreEvents'],
             on: {
@@ -198,9 +212,12 @@ export const appMachine = model.createMachine(
   },
   {
     actions: {
+      setIntent: assign({
+        isRequestIntent: (_context, event) => event.data,
+      }),
       forwardToServices: pure((context, event) =>
         Object.values(context.serviceRefs).map(serviceRef =>
-          send({...event, type: `APP_${event.type}`}, {to: serviceRef}),
+          send({...event, type: APP_${event.type}}, {to: serviceRef}),
         ),
       ),
       setIsReadError: assign({
@@ -290,7 +307,7 @@ export const appMachine = model.createMachine(
 
           if (isAndroid()) {
             serviceRefs.request = spawn(
-              createRequestMachine(serviceRefs),
+              createRequestMachine(serviceRefs, context.isRequestIntent),
               requestMachine.id,
             );
           }
@@ -345,6 +362,9 @@ export const appMachine = model.createMachine(
     },
 
     services: {
+      checkIntent: () => {
+        return ODKIntentModule.isRequestIntent();
+      },
       getAppInfo: () => async callback => {
         const appInfo = {
           deviceId: getDeviceId(),
@@ -408,6 +428,9 @@ type State = StateFrom<typeof appMachine>;
 
 export function selectAppInfo(state: State) {
   return state.context.info;
+}
+export function selectIsRequestIntent(state: State) {
+  return state.context.isRequestIntent;
 }
 export function selectIsReady(state: State) {
   return state.matches('ready');

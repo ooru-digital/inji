@@ -14,6 +14,10 @@ export const getKebabMenuOptions = props => {
       props.service.send('CLOSE_VC_MODAL');
   };
 
+  const openTrustfinger = flowType => () => {
+    controller.OPEN_TRUST_FINGER();
+  };
+
   const activationNotCompleted =
     !controller.walletBindingResponse &&
     isActivationNeeded(props?.vcMetadata.issuer);
@@ -48,7 +52,8 @@ export const getKebabMenuOptions = props => {
   const shareWithSelfieOption = {
     label: t('shareWithSelfie'),
     icon: SvgImage.OutlinedShareWithSelfieIcon(),
-    onPress: loadScanScreen(VCShareFlowType.MINI_VIEW_SHARE_WITH_SELFIE),
+    // onPress: loadScanScreen(VCShareFlowType.MINI_VIEW_SHARE_WITH_SELFIE),
+    onPress: openTrustfinger(''),
     testID: 'shareVcWithSelfieFromKebab',
   };
 
