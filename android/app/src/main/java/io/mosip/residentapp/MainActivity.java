@@ -4,12 +4,17 @@ import expo.modules.ReactActivityDelegateWrapper;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
+
+import java.io.File;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import com.aratek.trustfinger.sdk.TrustFingerException;
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
@@ -18,6 +23,10 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactActivityDelegate;
 import expo.modules.ReactActivityDelegateWrapper;
 
+
+import com.aratek.trustfinger.sdk.TrustFinger;
+import com.aratek.trustfinger.sdk.TrustFingerDevice;
+
 /**
  * IMPORTANT NOTE: The Android permission flow here works
  * for Android 10 and below, and Android 11,
@@ -25,6 +34,8 @@ import expo.modules.ReactActivityDelegateWrapper;
  * fails to work, etc.
  */
 public class MainActivity extends ReactActivity {
+
+  private TrustFinger mTrustFinger;
 
   private static final String[] REQUIRED_PERMISSIONS = new String[] {
     Manifest.permission.BLUETOOTH,
@@ -36,6 +47,12 @@ public class MainActivity extends ReactActivity {
 
   private static final int REQUEST_CODE_REQUIRED_PERMISSIONS = 1;
 
+  private MainApplication mApp;
+
+  static {
+    System.loadLibrary("TrustFingerAlg");
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
@@ -43,6 +60,9 @@ public class MainActivity extends ReactActivity {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null);
+    mApp = (MainApplication) getApplication();
+   mApp.put(Config.FEATURE_PATH, Config.COMMON_PATH + File.separator + "AratekTrustFinger" + File.separator +
+                "FingerData");
   }
 
   /**
@@ -104,5 +124,30 @@ public class MainActivity extends ReactActivity {
         // If you opted-in for the New Architecture, we enable Concurrent React (i.e. React 18).
         DefaultNewArchitectureEntryPoint.getConcurrentReactEnabled() // concurrentRootEnabled
     ));
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    initTrustFinger();
+  }
+  private void initTrustFinger() {
+    try {
+      mTrustFinger = TrustFinger.getInstance(this.getApplicationContext());
+      Log.i("mTrustFinger12", "initTrustFinger: ");
+      mTrustFinger.initialize();
+      Log.i("mTrustFinger123", "initTrustFinger: "+mTrustFinger);
+    }catch (TrustFingerException e) {
+      Log.i("TrustFinger", "getInstance Exception: " + e.getType().toString() + "", e);
+//      handleMsg("TrustFinger getInstance Exception: " + e.getType().toString() + "", Color.RED);
+      if (e.getType().toString().equals("DEVICE_NOT_FOUND")) {
+//        showAlertDialog(true, "No fingerprint device detected!");
+      }
+      e.printStackTrace();
+    } catch (ArrayIndexOutOfBoundsException e) {
+      Log.i("TrustFinger ArrayIndexOutOfBoundsException", "getInstance Exception: " + e);
+//      showAlertDialog(true, "The system does not support simultaneous access to two devices" + ".");
+    }
+
   }
 }

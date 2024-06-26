@@ -1,11 +1,19 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {FlatList, Linking, Pressable, SafeAreaView, View} from 'react-native';
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  SafeAreaView,
+  View,
+  NativeModules,
+} from 'react-native';
 import {Modal} from './ui/Modal';
 import {Column, Text} from './ui';
 import {Theme} from './ui/styleUtils';
 import {BannerNotificationContainer} from './BannerNotificationContainer';
 import getAllConfigurations from '../shared/api';
+const {TrustFingerReactNativeModule} = NativeModules;
 
 export const HelpScreen: React.FC<HelpScreenProps> = props => {
   const {t} = useTranslation('HelpScreen');
@@ -17,6 +25,17 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
     getAllConfigurations().then(response => {
       setInjiHelpUrl(response.aboutInjiUrl);
     });
+  }, []);
+
+  useEffect(() => {
+    // Fetch SDK version
+    TrustFingerReactNativeModule.getSdkJarVersion()
+      .then(version => {
+        console.log('sdk version....', version);
+      })
+      .catch(error => {
+        console.error('Error fetching SDK version: ', error);
+      });
   }, []);
 
   useEffect(() => {
