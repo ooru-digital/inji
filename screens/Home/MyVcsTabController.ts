@@ -68,7 +68,6 @@ export function useMyVcsTab(props: HomeScreenTabProps) {
       vcMetaService,
       selectVerificationErrorMessage,
     ),
-    setScanSearchID: useSelector(service, selectIDfromScanSearch),
 
     SET_STORE_VC_ITEM_STATUS: () =>
       service.send(MyVcsTabEvents.SET_STORE_VC_ITEM_STATUS()),

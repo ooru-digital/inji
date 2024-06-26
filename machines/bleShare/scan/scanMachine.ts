@@ -707,9 +707,9 @@ export const scanMachine =
                 'resetSelectedVc',
                 'resetShowQuickShareSuccessBanner',
               ],
-              invoke: {
-                src: 'disconnect',
-              },
+              // invoke: {
+              //   //src: 'disconnect',
+              // },
             },
             navigateToHistory: {
               entry: ['resetFlowType', 'resetSelectedVc'],
@@ -773,14 +773,14 @@ export const scanMachine =
           },
         },
         disconnected: {
-          on: {
-            RETRY: {
-              target: '#scan.reviewing.cancelling',
-            },
-            DISMISS: {
-              target: '#scan.reviewing.disconnect',
-            },
-          },
+          // on: {
+          //   RETRY: {
+          //     target: '#scan.reviewing.cancelling',
+          //   },
+          //   DISMISS: {
+          //     target: '#scan.reviewing.disconnect',
+          //   },
+          // },
         },
         handlingBleError: {
           on: {
@@ -1249,7 +1249,7 @@ export const scanMachine =
           const walletErrorCodePrefix = 'TVW';
           const subscription = wallet.handleDataEvents(event => {
             if (event.type === EventTypes.onDisconnected) {
-              callback({type: 'DISCONNECT'});
+              //callback({type: 'DISCONNECT'});
             }
             if (
               event.type === EventTypes.onError &&
@@ -1446,4 +1446,8 @@ export function selectIsFaceVerificationConsent(state: State) {
 
 export function selectIDfromScanSearch(state: State) {
   return state.context.idFromQRCode;
+}
+
+export function selectIsIdScanDone(state: State) {
+  return state.matches('setSearchTextHome');
 }

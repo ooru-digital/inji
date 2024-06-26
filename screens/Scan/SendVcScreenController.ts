@@ -25,6 +25,7 @@ import {RootRouteProps} from '../../routes';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 import {VCItemMachine} from '../../machines/VerifiableCredential/VCItemMachine/VCItemMachine';
 import {Theme} from '../../components/ui/styleUtils';
+import {selectIDfromScanSearch} from '../../machines/bleShare/scan/scanMachine';
 
 type MyVcsTabNavigation = NavigationProp<RootRouteProps>;
 
@@ -44,6 +45,7 @@ export function useSendVcScreen() {
     selectedIndex,
     receiverInfo: useSelector(scanService, selectReceiverInfo),
     vcName: useSelector(scanService, selectVcName),
+    setScanSearchID: useSelector(scanService, selectIDfromScanSearch),
     shareableVcsMetadata: useSelector(
       vcMetaService,
       selectShareableVcsMetadata,

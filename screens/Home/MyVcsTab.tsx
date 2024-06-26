@@ -249,11 +249,7 @@ export const MyVcsTab: React.FC<HomeScreenTabProps> = props => {
                     placeholder={t('searchByName')}
                     onFocus={onFocusSearch}
                     onChangeText={text => {
-                      if (controller.setScanSearchID) {
-                        filterVcs(controller.setScanSearchID);
-                      } else {
-                        filterVcs(text);
-                      }
+                      filterVcs(text);
                     }}
                     onLayout={() => filterVcs('')}
                   />
