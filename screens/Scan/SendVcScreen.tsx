@@ -29,13 +29,17 @@ export const SendVcScreen: React.FC = () => {
   const {t} = useTranslation('SendVcScreen');
   const {appService} = useContext(GlobalContext);
   const controller = useSendVcScreen();
-  const shareableVcsMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
+  let shareableVcsMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
     controller.shareableVcsMetadata,
   );
   let service;
 
   if (shareableVcsMetadataOrderedByPinStatus?.length > 0) {
-    const vcMetadata = shareableVcsMetadataOrderedByPinStatus[0];
+    shareableVcsMetadataOrderedByPinStatus =
+      shareableVcsMetadataOrderedByPinStatus.filter(
+        item => item.credentialID === controller.setScanSearchID,
+      );
+    const vcMetadata = shareableVcsMetadataOrderedByPinStatus;
     const firstVCMachine = useRef(
       createVCItemMachine(
         appService.getSnapshot().context.serviceRefs,
