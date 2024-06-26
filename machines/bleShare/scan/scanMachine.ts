@@ -82,6 +82,7 @@ const model = createModel(
     QrLoginRef: {} as ActorRefFrom<typeof qrLoginMachine>,
     showQuickShareSuccessBanner: false,
     linkCode: '',
+    idFromQRCode: '',
     quickShareData: {},
     showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
@@ -446,10 +447,18 @@ export const scanMachine =
                 actions: 'setQuickShareData',
               },
               {
+                target: 'setSearchTextHome',
+                cond: 'isHTTPQRCode',
+                actions: 'getIDFromQRCode',
+              },
+              {
                 target: 'invalid',
               },
             ],
           },
+        },
+        setSearchTextHome: {
+          entry: [() => console.log('In target setSearchTextHome')],
         },
         decodeQuickShareData: {
           entry: 'loadMetaDataToMemory',
@@ -670,7 +679,12 @@ export const scanMachine =
               },
             },
             accepted: {
-              entry: ['logShared', 'sendVcShareSuccessEvent'],
+              entry: [
+                'logShared',
+                'sendVcShareSuccessEvent',
+                'removeVc',
+                'refreshVCs',
+              ],
               on: {
                 DISMISS: {
                   target: 'disconnect',
@@ -693,9 +707,9 @@ export const scanMachine =
                 'resetSelectedVc',
                 'resetShowQuickShareSuccessBanner',
               ],
-              invoke: {
-                src: 'disconnect',
-              },
+              // invoke: {
+              //   //src: 'disconnect',
+              // },
             },
             navigateToHistory: {
               entry: ['resetFlowType', 'resetSelectedVc'],
@@ -759,14 +773,14 @@ export const scanMachine =
           },
         },
         disconnected: {
-          on: {
-            RETRY: {
-              target: '#scan.reviewing.cancelling',
-            },
-            DISMISS: {
-              target: '#scan.reviewing.disconnect',
-            },
-          },
+          // on: {
+          //   RETRY: {
+          //     target: '#scan.reviewing.cancelling',
+          //   },
+          //   DISMISS: {
+          //     target: '#scan.reviewing.disconnect',
+          //   },
+          // },
         },
         handlingBleError: {
           on: {
@@ -1048,6 +1062,15 @@ export const scanMachine =
           linkCode: (_, event) =>
             new URL(event.params).searchParams.get('linkCode'),
         }),
+        getIDFromQRCode: assign({
+          idFromQRCode: (_, event) => {
+            console.log('Hii', event.params);
+
+            const code = event.params.toString().split('/').pop();
+            console.log('Code is', code);
+            return code;
+          },
+        }),
         setQuickShareData: assign({
           quickShareData: (_, event) =>
             JSON.parse(decodeData(event.params.split(DEFAULT_QR_HEADER)[1])),
@@ -1116,6 +1139,16 @@ export const scanMachine =
             ),
           );
         },
+
+        removeVc: send(
+          (context: any) => {
+            return StoreEvents.REMOVE(
+              MY_VCS_STORE_KEY,
+              VCMetadata.fromVC(context.selectedVc.vcMetadata).getVcKey(),
+            );
+          },
+          {to: context => context.serviceRefs.store},
+        ),
 
         sendBLEConnectionErrorEvent: (_context, event) => {
           sendErrorEvent(
@@ -1216,7 +1249,7 @@ export const scanMachine =
           const walletErrorCodePrefix = 'TVW';
           const subscription = wallet.handleDataEvents(event => {
             if (event.type === EventTypes.onDisconnected) {
-              callback({type: 'DISCONNECT'});
+              //callback({type: 'DISCONNECT'});
             }
             if (
               event.type === EventTypes.onError &&
@@ -1346,7 +1379,9 @@ export const scanMachine =
         showFaceAuthConsentScreen: context => {
           return context.showFaceAuthConsent;
         },
-
+        // sample: 'https://app.credissuer.com/524DBD7C4857'
+        isHTTPQRCode: (_context, event) =>
+          event.params.startsWith('https://app.credissuer.com'),
         // sample: 'OPENID4VP://connect:?name=OVPMOSIP&key=69dc92a2cc91f02258aa8094d6e2b62877f5b6498924fbaedaaa46af30abb364'
         isOpenIdQr: (_context, event) =>
           event.params.startsWith('OPENID4VP://'),
@@ -1407,4 +1442,12 @@ export function selectIsMinimumStorageRequiredForAuditEntryLimitReached(
 
 export function selectIsFaceVerificationConsent(state: State) {
   return state.matches('reviewing.faceVerificationConsent');
+}
+
+export function selectIDfromScanSearch(state: State) {
+  return state.context.idFromQRCode;
+}
+
+export function selectIsIdScanDone(state: State) {
+  return state.matches('setSearchTextHome');
 }

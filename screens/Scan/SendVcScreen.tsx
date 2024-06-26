@@ -29,13 +29,17 @@ export const SendVcScreen: React.FC = () => {
   const {t} = useTranslation('SendVcScreen');
   const {appService} = useContext(GlobalContext);
   const controller = useSendVcScreen();
-  const shareableVcsMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
+  let shareableVcsMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
     controller.shareableVcsMetadata,
   );
   let service;
 
   if (shareableVcsMetadataOrderedByPinStatus?.length > 0) {
-    const vcMetadata = shareableVcsMetadataOrderedByPinStatus[0];
+    shareableVcsMetadataOrderedByPinStatus =
+      shareableVcsMetadataOrderedByPinStatus.filter(
+        item => item.credentialID === controller.setScanSearchID,
+      );
+    const vcMetadata = shareableVcsMetadataOrderedByPinStatus;
     const firstVCMachine = useRef(
       createVCItemMachine(
         appService.getSnapshot().context.serviceRefs,
@@ -107,7 +111,8 @@ export const SendVcScreen: React.FC = () => {
           ) !== -1 && (
             <Button
               type="gradient"
-              title={t('acceptRequestAndVerify')}
+              //title={t('acceptRequestAndVerify')}
+              title={t('authWithFingerPrint')}
               styles={{marginTop: 12}}
               disabled={controller.selectedIndex == null}
               onPress={controller.VERIFY_AND_ACCEPT_REQUEST}
@@ -117,7 +122,8 @@ export const SendVcScreen: React.FC = () => {
           <Button
             type="gradient"
             styles={{marginTop: 12}}
-            title={t('acceptRequest')}
+            // title={t('acceptRequest')}
+            title={t('authWithFace')}
             disabled={controller.selectedIndex == null}
             onPress={controller.ACCEPT_REQUEST}
           />

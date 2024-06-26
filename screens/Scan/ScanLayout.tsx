@@ -69,7 +69,8 @@ export const ScanLayout: React.FC = () => {
               name={SCAN_ROUTES.SendVcScreen}
               component={SendVcScreen}
               options={{
-                title: t('sharingVc'),
+                //title: t('sharingVc'),
+                title: t('authenticateId'),
                 headerTitleAlign: 'center',
                 headerTitle: props => (
                   <View style={Theme.Styles.sendVcHeaderContainer}>

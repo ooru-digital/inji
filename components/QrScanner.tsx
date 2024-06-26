@@ -12,6 +12,12 @@ import {useTranslation} from 'react-i18next';
 import {useScanLayout} from '../screens/Scan/ScanLayoutController';
 import testIDProps from '../shared/commonUtil';
 import {SvgImage} from './ui/svg';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+
+import {MainBottomTabParamList} from '../routes/routeTypes';
+import {ScanStackParamList} from '../routes/routesConstants';
+import {BOTTOM_TAB_ROUTES, SCAN_ROUTES} from '../routes/routesConstants';
+import {VCShareFlowType} from '../shared/Utils';
 
 export const QrScanner: React.FC<QrScannerProps> = props => {
   const {t} = useTranslation('QrScanner');
@@ -23,6 +29,11 @@ export const QrScanner: React.FC<QrScannerProps> = props => {
 
   const isActive = useSelector(appService, selectIsActive);
 
+  const navigation =
+    useNavigation<
+      NavigationProp<ScanStackParamList & MainBottomTabParamList>
+    >();
+
   const openSettings = () => {
     Linking.openSettings();
   };
@@ -30,7 +41,11 @@ export const QrScanner: React.FC<QrScannerProps> = props => {
   useEffect(() => {
     (async () => {
       const response = await Camera.requestCameraPermissionsAsync();
+      console.log('response.granted  ${response.granted}');
       setHasPermission(response.granted);
+      if (!response.granted) {
+        console.log('Camera permissions not granted');
+      }
     })();
   }, []);
 
@@ -39,6 +54,9 @@ export const QrScanner: React.FC<QrScannerProps> = props => {
       (async () => {
         const response = await Camera.requestCameraPermissionsAsync();
         setHasPermission(response.granted);
+        if (!response.granted) {
+          console.log('Camera permissions not granted');
+        }
       })();
     }
   }, [isActive]);
@@ -82,6 +100,15 @@ export const QrScanner: React.FC<QrScannerProps> = props => {
       </View>
     );
   };
+
+  const extractIdFromData = (data: string | null): string | null => {
+    if (data === null) {
+      return null;
+    }
+    const parts = data.split('/');
+    return parts.pop() || null;
+  };
+
   return (
     <Column fill align="space-between" margin="0 0 60 0">
       <View style={Theme.Styles.scannerContainer}>
@@ -131,6 +158,19 @@ export const QrScanner: React.FC<QrScannerProps> = props => {
 
   function onBarcodeScanned(event: BarCodeEvent) {
     props.onQrFound(event.data);
+    console.log(event.data);
+    const id = extractIdFromData(event.data);
+    if (id !== null) {
+      console.log(id);
+      controller.isSendingVc = true;
+      controller.isReviewing = true;
+      controller.isDone = false;
+      controller.isAccepted = false;
+      controller.flowType = VCShareFlowType.SIMPLE_SHARE;
+      navigation.navigate(SCAN_ROUTES.ScanScreen);
+    } else {
+      console.log('No ID found in scanned data');
+    }
     setScanned(true);
   }
 };

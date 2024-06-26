@@ -38,7 +38,10 @@ import {
   selectIsReviewing,
   selectIsVerifyingIdentity,
 } from '../../machines/bleShare/commonSelectors';
-import {ScanEvents} from '../../machines/bleShare/scan/scanMachine';
+import {
+  ScanEvents,
+  selectIsIdScanDone,
+} from '../../machines/bleShare/scan/scanMachine';
 import {BOTTOM_TAB_ROUTES, SCAN_ROUTES} from '../../routes/routesConstants';
 import {ScanStackParamList} from '../../routes/routesConstants';
 import {VCShareFlowType} from '../../shared/Utils';
@@ -60,6 +63,7 @@ export function useScanLayout() {
   const scanService = appService.children.get('scan')!!;
   const navigation = useNavigation<ScanLayoutNavigation>();
 
+  const isIdScanned = useSelector(scanService, selectIsIdScanDone);
   const isLocationDisabled = useSelector(scanService, selectIsLocationDisabled);
   const isLocationDenied = useSelector(scanService, selectIsLocationDenied);
   const isBleError = useSelector(scanService, selectIsHandlingBleError);
@@ -106,6 +110,10 @@ export function useScanLayout() {
   };
   const RETRY_VERIFICATION = () =>
     scanService.send(ScanEvents.RETRY_VERIFICATION());
+
+  if (isIdScanned) {
+    GOTO_HOME();
+  }
 
   const isInvalid = useSelector(scanService, selectIsInvalid);
   const isConnecting = useSelector(scanService, selectIsConnecting);
