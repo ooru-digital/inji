@@ -4,7 +4,7 @@ package io.mosip.residentapp;
  */
 public class Config {
     public static final int maxQualityTh = 80;
-    public static final int minQualityTh = 30;
+    public static final int minQualityTh = 50;
 
 
     public static String COMMON_PATH = "/sdcard/AratekTrustFinger";
