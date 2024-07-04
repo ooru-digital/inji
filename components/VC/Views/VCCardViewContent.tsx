@@ -36,6 +36,8 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
   );
   const issuerLogo = props.verifiableCredentialData.issuerLogo;
   const faceImage = props.verifiableCredentialData.face;
+  const left_finger = props.verifiableCredentialData;
+  const right_finger = props.verifiableCredentialData.right_finger;
 
   return (
     <ImageBackground
@@ -106,7 +108,6 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
           )}
           {isVCSelectable}
         </Row>
-
         <WalletBinding service={props.service} vcMetadata={props.vcMetadata} />
 
         <RemoveVcWarningOverlay
