@@ -37,6 +37,10 @@ export interface CredentialSubject {
   id: string;
   phone: string;
   face: string;
+  finger: {
+    left_thumb: string;
+    right_thumb: string;
+  };
 }
 
 type VCContext = (string | Record<string, unknown>)[];
@@ -63,6 +67,10 @@ export interface VerifiableCredential {
   credential: Credential;
   wellKnown: string;
   credentialTypes: Object[];
+  finger: {
+    left_thumb: string;
+    right_thumb: string;
+  };
 }
 
 export interface CredentialWrapper {

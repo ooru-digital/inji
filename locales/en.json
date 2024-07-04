@@ -683,6 +683,7 @@
     "acceptRequest": "Share",
     "acceptRequestAndVerify": "Vote",
     "authWithFingerPrint": "Fingerprint Auth",
+    "captureFingerPrint": "Capture Fingerprint",
     "authWithFace": "Face Auth",
     "reject": "Reject",
     "consentToPhotoVerification": "I give consent to have my photo taken for authentication",

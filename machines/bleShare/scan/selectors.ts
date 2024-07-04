@@ -33,6 +33,14 @@ export function selectVerifiableCredentialData(state: State) {
         wellKnown: state.context.selectedVc?.verifiableCredential?.wellKnown,
         face: state.context.selectedVc?.verifiableCredential?.credential
           .credentialSubject?.face,
+        finger: {
+          left_thumb:
+            state.context.selectedVc?.verifiableCredential?.credential
+              .credentialSubject?.finger.left_thumb,
+          right_thumb:
+            state.context.selectedVc?.verifiableCredential?.credential
+              .credentialSubject?.finger.left_thumb,
+        },
         credentialTypes:
           state.context.selectedVc?.verifiableCredential?.credentialTypes,
       }
