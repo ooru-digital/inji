@@ -164,7 +164,7 @@ export const SendVcScreen: React.FC = () => {
               disabled={controller.selectedIndex == null}
               onPress={() =>
                 verifyFingerprint(
-                  controller.verifiableCredentialData?.finger?.right_thumb ||
+                  shareableVcsMetadataOrderedByPinStatus[0].finger ||
                     base64FeatureData,
                 )
               }

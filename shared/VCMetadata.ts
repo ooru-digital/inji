@@ -15,6 +15,7 @@ export class VCMetadata {
   protocol?: string = '';
   timestamp?: string = '';
   credentialID?: string = '';
+  finger?: string = '';
 
   constructor({
     idType = '',
@@ -25,6 +26,7 @@ export class VCMetadata {
     protocol = '',
     timestamp = '',
     credentialID = '',
+    finger = '',
   } = {}) {
     this.idType = idType;
     this.requestId = requestId;
@@ -34,6 +36,7 @@ export class VCMetadata {
     this.issuer = issuer;
     this.timestamp = timestamp;
     this.credentialID = credentialID;
+    this.finger = finger;
   }
 
   //TODO: Remove any typing and use appropriate typing
@@ -47,6 +50,7 @@ export class VCMetadata {
       issuer: vc.issuer,
       timestamp: vc.vcMetadata ? vc.vcMetadata.timestamp : vc.timestamp,
       credentialID: vc.credentialID,
+      finger: vc.finger,
     });
   }
 
@@ -113,5 +117,8 @@ export const getVCMetadata = (context: object) => {
       context.verifiableCredential?.credential?.credentialSubject[
         'credential_id'
       ],
+    finger:
+      context.verifiableCredential?.credential?.credentialSubject.finger
+        .right_thumb,
   });
 };
