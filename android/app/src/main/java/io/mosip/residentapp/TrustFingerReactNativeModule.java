@@ -163,9 +163,9 @@ public class TrustFingerReactNativeModule extends ReactContextBaseJavaModule {
                 if (storedTemplateData != null) {
                     VerifyResult result = mTrustFingerDevice.verify(SecurityLevel.Level4, storedTemplateData, rightThumbTemplate);
                     if (result.isMatched) {
-                        promise.resolve("Fingerprint verification successful");
+                        promise.resolve(true);
                     } else {
-                        promise.resolve("Fingerprint verification failed");
+                        promise.resolve(false);
                     }
                 } else {
                     promise.reject("E_VERIFY", "Failed to generalize stored feature data");

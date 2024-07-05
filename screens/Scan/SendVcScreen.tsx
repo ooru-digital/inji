@@ -24,11 +24,18 @@ import {Issuers} from '../../shared/openId4VCI/Utils';
 import {FaceVerificationAlertOverlay} from './FaceVerificationAlertOverlay';
 import {Error} from '../../components/ui/Error';
 import {SvgImage} from '../../components/ui/svg';
+import {Loader} from '../../components/ui/Loader';
 
 const {TrustFingerReactNativeModule} = NativeModules;
 
+type FingerCaptureState = true | false | null;
+
 export const SendVcScreen: React.FC = () => {
   const {t} = useTranslation('SendVcScreen');
+
+  const [isFingerCaptureSuccess, setIsFingerCaptureSuccess] =
+    useState<FingerCaptureState>(null);
+
   const {appService} = useContext(GlobalContext);
   const controller = useSendVcScreen();
   const [base64FeatureData, setBase64FeatureData] = useState<string | null>(
@@ -104,12 +111,29 @@ export const SendVcScreen: React.FC = () => {
       const result = await TrustFingerReactNativeModule.verifyBiometricData(
         fingerprintData,
       );
+      if (!result) {
+        if (result === false) {
+          setIsFingerCaptureSuccess(false);
+        } else {
+          setIsFingerCaptureSuccess(null);
+        }
+      } else if (result === true) {
+        setIsFingerCaptureSuccess(true);
+      }
       console.log('Fingerprint verification result:', result);
       // Further processing based on verification result
     } catch (error) {
       console.error('Error verifying fingerprint data:', error);
     }
   };
+
+  useEffect(() => {
+    if (isFingerCaptureSuccess !== null) {
+      setTimeout(() => {
+        setIsFingerCaptureSuccess(null);
+      }, 5000);
+    }
+  }, [isFingerCaptureSuccess]);
 
   return (
     <React.Fragment>
@@ -123,6 +147,27 @@ export const SendVcScreen: React.FC = () => {
             {t('pleaseSelectAnId')}
           </Text>
         </Column>
+        {isFingerCaptureSuccess === true ? (
+          <Column width={'100%'} backgroundColor="#25b653">
+            <Text
+              margin="15 0 13 24"
+              weight="bold"
+              color={'#ffffff'}
+              style={{position: 'relative'}}>
+              {t('ScanScreen:postFingerCapture:captureSuccessMessage')}
+            </Text>
+          </Column>
+        ) : isFingerCaptureSuccess === false ? (
+          <Column width={'100%'} backgroundColor="#e62929">
+            <Text
+              margin="15 0 13 24"
+              weight="bold"
+              color={'#ffffff'}
+              style={{position: 'relative'}}>
+              {t('ScanScreen:postFingerCapture:captureFingerprintMissing')}
+            </Text>
+          </Column>
+        ) : null}
         <Column scroll>
           {shareableVcsMetadataOrderedByPinStatus.map((vcMetadata, index) => (
             <VcItemContainer
@@ -140,7 +185,7 @@ export const SendVcScreen: React.FC = () => {
         <Column
           style={Theme.SendVcScreenStyles.shareOptionButtonsContainer}
           backgroundColor={Theme.Colors.whiteBackgroundColor}>
-          {([Issuers.Mosip, Issuers.ESignet].indexOf(
+          {/* {([Issuers.Mosip, Issuers.ESignet].indexOf(
             controller.verifiableCredentialData.finger?.left_thumb,
           ) ||
             [Issuers.Mosip, Issuers.ESignet].indexOf(
@@ -152,7 +197,7 @@ export const SendVcScreen: React.FC = () => {
               styles={{marginTop: 12}}
               onPress={captureFingerprint}
             />
-          )}
+          )} */}
 
           {[Issuers.Mosip, Issuers.ESignet].indexOf(
             controller.verifiableCredentialData.issuer,
@@ -169,10 +214,6 @@ export const SendVcScreen: React.FC = () => {
                 )
               }
             />
-          )}
-          {console.log(
-            'controller.verifiableCredentialData?.finger  >>>',
-            controller.verifiableCredentialData,
           )}
           <Button
             type="gradient"
