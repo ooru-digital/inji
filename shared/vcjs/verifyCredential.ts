@@ -44,7 +44,7 @@ export async function verifyCredential(
       date: verifiableCredential.proof.created,
     };
     switch (verifiableCredential.proof.type) {
-      case ProofType.ED25519: {
+      case 'Ed25519Signature2020': {
         suite = new Ed25519Signature2018(suiteOptions);
         break;
       }
