@@ -18,6 +18,7 @@ import {
 import {
   ScanEvents,
   selectIsFaceVerificationConsent,
+  selectIsFingerVerified,
 } from '../../machines/bleShare/scan/scanMachine';
 import {VCShareFlowType} from '../../shared/Utils';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
@@ -63,14 +64,15 @@ export function useSendVcScreen() {
       scanService,
       selectVerifiableCredentialData,
     ),
+    selectIsFingerVerified: useSelector(scanService, selectIsFingerVerified),
     CANCEL: () => scanService.send(ScanEvents.CANCEL()),
     ACCEPT_REQUEST: () => scanService.send(ScanEvents.ACCEPT_REQUEST()),
     FACE_VERIFICATION_CONSENT: (isConsentGiven: boolean) =>
       scanService.send(ScanEvents.FACE_VERIFICATION_CONSENT(isConsentGiven)),
     VERIFY_AND_ACCEPT_REQUEST: () =>
       scanService.send(ScanEvents.VERIFY_AND_ACCEPT_REQUEST()),
-    CAPTURE_AND_UPDATE_VC: () =>
-      scanService.send(ScanEvents.VERIFY_AND_ACCEPT_REQUEST()),
+    CAPTURE_AND_UPDATE_VC: (fingerData: string): Promise<Boolean> =>
+      scanService.send(ScanEvents.CAPTURE_AND_UPDATE_VC(fingerData)),
     DISMISS: () => scanService.send(ScanEvents.DISMISS()),
     UPDATE_VC_NAME: (vcName: string) =>
       scanService.send(ScanEvents.UPDATE_VC_NAME(vcName)),

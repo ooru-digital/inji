@@ -63,6 +63,7 @@ import {getIdType} from '../../../shared/openId4VCI/Utils';
 import {VcMetaEvents} from '../../VerifiableCredential/VCMetaMachine/VCMetaMachine';
 // @ts-ignore
 import {decodeData} from '@mosip/pixelpass';
+import {verifyFingerprint} from '../../../screens/fingerPrint/verifyFingerprint';
 
 const {wallet, EventTypes, VerificationStatus} = tuvali;
 
@@ -87,6 +88,7 @@ const model = createModel(
     showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
     showFaceCaptureSuccessBanner: false,
+    isFingerVerified: false,
   },
   {
     events: {
@@ -94,6 +96,7 @@ const model = createModel(
       SCAN: (params: string) => ({params}),
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
+      CAPTURE_AND_UPDATE_VC: (fingerData: string) => ({fingerData}),
       VC_ACCEPTED: () => ({}),
       VC_REJECTED: () => ({}),
       VC_SENT: () => ({}),
@@ -180,6 +183,10 @@ export const scanMachine =
         DISMISS_QUICK_SHARE_BANNER: {
           actions: 'resetShowQuickShareSuccessBanner',
           target: '.inactive',
+        },
+        CAPTURE_AND_UPDATE_VC: {
+          actions: 'logCaptureAndVerify', // Optional: Log action
+          target: 'capturingAndVerifyingVC',
         },
       },
       states: {
@@ -871,6 +878,37 @@ export const scanMachine =
             },
           },
         },
+        capturingAndVerifyingVC: {
+          invoke: {
+            id: 'captureAndVerify',
+            src: async (context, event): Promise<Boolean> => {
+              const {fingerData} = event;
+              console.log('fingerData >>> ', fingerData);
+
+              let verifiedStatus = await verifyFingerprint(fingerData);
+
+              return new Promise(resolve => {
+                setTimeout(() => resolve(true), 1000); // Simulating async operation
+              });
+            },
+            onDone: {
+              target: 'nextStateOnSuccess',
+              actions: assign((context, event) => {
+                // Capture the result in the context
+                context.verificationResult = event.data;
+              }),
+            },
+            onError: {
+              target: 'nextStateOnError',
+            },
+          },
+        },
+        nextStateOnSuccess: {
+          type: 'final',
+        },
+        nextStateOnError: {
+          type: 'final',
+        },
       },
     },
     {
@@ -1197,6 +1235,9 @@ export const scanMachine =
             ),
           );
         },
+        logCaptureAndVerify: () => {
+          console.log('Capturing and verifying VC...');
+        },
       },
 
       services: {
@@ -1450,4 +1491,7 @@ export function selectIDfromScanSearch(state: State) {
 
 export function selectIsIdScanDone(state: State) {
   return state.matches('setSearchTextHome');
+}
+export function selectIsFingerVerified(state: State) {
+  return state.context.isFingerVerified;
 }

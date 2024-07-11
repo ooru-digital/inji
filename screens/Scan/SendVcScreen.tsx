@@ -207,12 +207,23 @@ export const SendVcScreen: React.FC = () => {
               title={t('authWithFingerPrint')}
               styles={{marginTop: 12}}
               disabled={controller.selectedIndex == null}
-              onPress={() =>
-                verifyFingerprint(
-                  shareableVcsMetadataOrderedByPinStatus[0].finger ||
-                    base64FeatureData,
-                )
-              }
+              onPress={() => {
+                if (shareableVcsMetadataOrderedByPinStatus[0].finger) {
+                  controller
+                    .CAPTURE_AND_UPDATE_VC(
+                      shareableVcsMetadataOrderedByPinStatus[0].finger,
+                    )
+                    .then(result => {
+                      console.log('Capture and update VC result: ', result);
+                    })
+                    .catch(error => {
+                      console.error(
+                        'Error during capture and update VC: ',
+                        error,
+                      );
+                    });
+                }
+              }}
             />
           )}
           <Button
