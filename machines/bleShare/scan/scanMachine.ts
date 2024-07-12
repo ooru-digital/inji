@@ -97,6 +97,7 @@ const model = createModel(
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
       CAPTURE_AND_UPDATE_VC: (fingerData: string) => ({fingerData}),
+      FINGERPRINT_VERIFIED: () => ({}),
       VC_ACCEPTED: () => ({}),
       VC_REJECTED: () => ({}),
       VC_SENT: () => ({}),
@@ -881,22 +882,19 @@ export const scanMachine =
         capturingAndVerifyingVC: {
           invoke: {
             id: 'captureAndVerify',
-            src: async (context, event): Promise<Boolean> => {
+            src: async (context, event) => {
               const {fingerData} = event;
-              console.log('fingerData >>> ', fingerData);
+              // console.log('fingerData >>> ', fingerData);
 
               let verifiedStatus = await verifyFingerprint(fingerData);
+              console.log('verifiedStatus >> ', verifiedStatus);
 
-              return new Promise(resolve => {
-                setTimeout(() => resolve(true), 1000); // Simulating async operation
-              });
+              context.isFingerVerified = verifiedStatus;
+
+              return verifiedStatus;
             },
             onDone: {
               target: 'nextStateOnSuccess',
-              actions: assign((context, event) => {
-                // Capture the result in the context
-                context.verificationResult = event.data;
-              }),
             },
             onError: {
               target: 'nextStateOnError',
@@ -904,7 +902,39 @@ export const scanMachine =
           },
         },
         nextStateOnSuccess: {
-          type: 'final',
+          always: [
+            {
+              cond: 'isFingerprintVerified',
+              target: 'fingerprintVerified',
+              actions: [
+                // any actions to be performed when transitioning to fingerprintVerified state
+              ],
+            },
+            {
+              cond: 'isFingerprintNotVerified',
+              target: 'fingerprintNotVerified',
+              actions: [
+                // any actions to be performed when transitioning to fingerprintNotVerified state
+              ],
+            },
+          ],
+        },
+        fingerprintVerified: {
+          entry: ['removeVc'], /// TODO: navigate to any screen and refresh VC
+          // entry: [
+          //   assign((context) => {
+          //     console.log('Fingerprint verified!');
+          //     return context;
+          //   }),
+          // ],
+        },
+        fingerprintNotVerified: {
+          entry: [
+            assign(context => {
+              console.log('Fingerprint is not verified.');
+              return context;
+            }),
+          ],
         },
         nextStateOnError: {
           type: 'final',
@@ -1182,7 +1212,7 @@ export const scanMachine =
           (context: any) => {
             return StoreEvents.REMOVE(
               MY_VCS_STORE_KEY,
-              VCMetadata.fromVC(context.selectedVc.vcMetadata).getVcKey(),
+              VCMetadata.fromVC(context.selectedVc.vcMetadata[0]).getVcKey(),
             );
           },
           {to: context => context.serviceRefs.store},
@@ -1456,6 +1486,9 @@ export const scanMachine =
 
         isFlowTypeSimpleShare: context =>
           context.flowType === VCShareFlowType.SIMPLE_SHARE,
+
+        isFingerprintVerified: context => context.isFingerVerified === true,
+        isFingerprintNotVerified: context => !context.isFingerVerified === true,
       },
 
       delays: {

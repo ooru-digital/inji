@@ -71,7 +71,7 @@ export function useSendVcScreen() {
       scanService.send(ScanEvents.FACE_VERIFICATION_CONSENT(isConsentGiven)),
     VERIFY_AND_ACCEPT_REQUEST: () =>
       scanService.send(ScanEvents.VERIFY_AND_ACCEPT_REQUEST()),
-    CAPTURE_AND_UPDATE_VC: (fingerData: string): Promise<Boolean> =>
+    CAPTURE_AND_UPDATE_VC: (fingerData: string) =>
       scanService.send(ScanEvents.CAPTURE_AND_UPDATE_VC(fingerData)),
     DISMISS: () => scanService.send(ScanEvents.DISMISS()),
     UPDATE_VC_NAME: (vcName: string) =>

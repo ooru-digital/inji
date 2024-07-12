@@ -208,21 +208,9 @@ export const SendVcScreen: React.FC = () => {
               styles={{marginTop: 12}}
               disabled={controller.selectedIndex == null}
               onPress={() => {
-                if (shareableVcsMetadataOrderedByPinStatus[0].finger) {
-                  controller
-                    .CAPTURE_AND_UPDATE_VC(
-                      shareableVcsMetadataOrderedByPinStatus[0].finger,
-                    )
-                    .then(result => {
-                      console.log('Capture and update VC result: ', result);
-                    })
-                    .catch(error => {
-                      console.error(
-                        'Error during capture and update VC: ',
-                        error,
-                      );
-                    });
-                }
+                controller.CAPTURE_AND_UPDATE_VC(
+                  shareableVcsMetadataOrderedByPinStatus[0].finger,
+                );
               }}
             />
           )}

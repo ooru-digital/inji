@@ -1,10 +1,20 @@
-export function verifyFingerprint(fingerprint: string) {
-  return new Promise<{success: boolean}>((resolve, reject) => {
-    // Mock implementation, replace with actual verification logic
-    if (fingerprint === 'validFingerprint') {
-      resolve({success: true});
-    } else {
-      reject(new Error('Invalid fingerprint'));
-    }
-  });
-}
+import {NativeModules} from 'react-native';
+
+export const verifyFingerprint = async (fingerprint: string) => {
+  const {TrustFingerReactNativeModule} = NativeModules;
+
+  if (!fingerprint) {
+    console.error('No fingerprint data to verify');
+    return;
+  }
+  try {
+    const result = await TrustFingerReactNativeModule.verifyBiometricData(
+      fingerprint,
+    );
+    console.log('in the verify finger .ts >>> ', result);
+
+    return result;
+  } catch (error) {
+    console.error('Error verifying fingerprint data:', error);
+  }
+};
