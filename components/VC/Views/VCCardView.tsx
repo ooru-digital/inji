@@ -49,6 +49,7 @@ export const VCCardView: React.FC<VCItemProps> = props => {
       verifiableCredentialData?.credentialTypes,
       CARD_VIEW_DEFAULT_FIELDS,
     ).then(response => {
+      console.log(verifiableCredentialData);
       setWellknown(response.wellknown);
       setFields(response.fields);
     });

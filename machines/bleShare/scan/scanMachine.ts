@@ -67,6 +67,8 @@ import {verifyFingerprint} from '../../../screens/fingerPrint/verifyFingerprint'
 
 const {wallet, EventTypes, VerificationStatus} = tuvali;
 
+type FingerCaptureState = true | false | null;
+
 const model = createModel(
   {
     serviceRefs: {} as AppServices,
@@ -88,7 +90,8 @@ const model = createModel(
     showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
     showFaceCaptureSuccessBanner: false,
-    isFingerVerified: false,
+    isFingerVerified: null as FingerCaptureState,
+    votedList: [] as VCMetadata[],
   },
   {
     events: {
@@ -128,6 +131,7 @@ const model = createModel(
       CHECK_FLOW_TYPE: () => ({}),
       UPDATE_VC_NAME: (vcName: string) => ({vcName}),
       STORE_RESPONSE: (response: any) => ({response}),
+      // FINGER_VERIFIED: () => ({}),
       APP_ACTIVE: () => ({}),
       FACE_VALID: () => ({}),
       FACE_INVALID: () => ({}),
@@ -887,11 +891,15 @@ export const scanMachine =
               // console.log('fingerData >>> ', fingerData);
 
               let verifiedStatus = await verifyFingerprint(fingerData);
+              // let verifiedStatus = true;
               console.log('verifiedStatus >> ', verifiedStatus);
 
               context.isFingerVerified = verifiedStatus;
-
-              return verifiedStatus;
+              setTimeout(() => {
+                if (context.isFingerVerified !== null) {
+                  context.isFingerVerified = null;
+                }
+              }, 5000);
             },
             onDone: {
               target: 'nextStateOnSuccess',
@@ -908,6 +916,9 @@ export const scanMachine =
               target: 'fingerprintVerified',
               actions: [
                 // any actions to be performed when transitioning to fingerprintVerified state
+                () => {
+                  console.log('Fingerprint verified!');
+                },
               ],
             },
             {
@@ -920,13 +931,34 @@ export const scanMachine =
           ],
         },
         fingerprintVerified: {
-          entry: ['removeVc'], /// TODO: navigate to any screen and refresh VC
-          // entry: [
-          //   assign((context) => {
-          //     console.log('Fingerprint verified!');
-          //     return context;
-          //   }),
-          // ],
+          // entry: ['removeVc'],
+          entry: [
+            assign(context => {
+              console.log('Fingerprint verified 2!');
+              console.log(
+                'VCMetadata.fromVC(context.selectedVc.vcMetadata[0]) >> ',
+                VCMetadata.fromVC(context.selectedVc.vcMetadata[0]),
+              );
+              context.votedList = [
+                ...context.votedList,
+                VCMetadata.fromVC(context.selectedVc.vcMetadata[0]),
+              ];
+              // fetch("https://mocki.io/v1/5c602d89-015c-4afe-a949-c4e0b22c73e1").then((resp)=>resp.json()).then((data)=>console.log("data: ",data.data)).catch(err=>console.log(err));
+              console.log('context.votedList >>', context.votedList);
+              return context;
+            }),
+            'removeVc',
+          ],
+          // on: {
+          //   FINGER_VERIFIED: {
+          //     target: 'navigatingToSettings',
+          //   },
+          // },
+          // initial: 'idle',
+          // states: {
+          //   idle: {},
+          //   navigatingToSettings: {},
+          // },
         },
         fingerprintNotVerified: {
           entry: [
@@ -937,7 +969,11 @@ export const scanMachine =
           ],
         },
         nextStateOnError: {
-          type: 'final',
+          entry: [
+            () => {
+              console.log('error occored while verifying finger print');
+            },
+          ],
         },
       },
     },
@@ -1527,4 +1563,7 @@ export function selectIsIdScanDone(state: State) {
 }
 export function selectIsFingerVerified(state: State) {
   return state.context.isFingerVerified;
+}
+export function selectVotedList(state: State) {
+  return state.context.votedList;
 }

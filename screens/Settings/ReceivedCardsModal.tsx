@@ -12,6 +12,7 @@ import {VCItemContainerFlowType} from '../../shared/Utils';
 export const ReceivedCardsModal: React.FC<ReceivedCardsProps> = ({
   isVisible,
   controller,
+  scanController,
   onDismiss,
 }) => {
   const {t} = useTranslation('ReceivedVcsTab');
@@ -32,7 +33,7 @@ export const ReceivedCardsModal: React.FC<ReceivedCardsProps> = ({
             onRefresh={controller.REFRESH}
           />
         }>
-        {controller.receivedVcsMetadata.map(vcMetadata => (
+        {scanController.votedListVCs.map(vcMetadata => (
           <VcItemContainer
             key={vcMetadata.getVcKey()}
             vcMetadata={vcMetadata}
@@ -41,7 +42,7 @@ export const ReceivedCardsModal: React.FC<ReceivedCardsProps> = ({
             onPress={controller.VIEW_VC}
           />
         ))}
-        {controller.receivedVcsMetadata.length === 0 && (
+        {scanController.votedListVCs.length === 0 && (
           <React.Fragment>
             <Centered fill>
               <Icon
@@ -84,5 +85,6 @@ export const ReceivedCardsModal: React.FC<ReceivedCardsProps> = ({
 export interface ReceivedCardsProps {
   isVisible: boolean;
   controller: any;
+  scanController: any;
   onDismiss: () => void;
 }

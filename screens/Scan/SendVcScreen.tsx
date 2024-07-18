@@ -91,49 +91,53 @@ export const SendVcScreen: React.FC = () => {
     }, []),
   );
 
-  const captureFingerprint = async () => {
-    try {
-      const capturedData =
-        await TrustFingerReactNativeModule.captureBiometricData();
-      console.log('Fingerprint data captured:', capturedData);
-      setBase64FeatureData(capturedData);
-    } catch (error) {
-      console.error('Error capturing fingerprint data:', error);
-    }
-  };
+  // const captureFingerprint = async () => {
+  //   try {
+  //     const capturedData =
+  //       await TrustFingerReactNativeModule.captureBiometricData();
+  //     console.log('Fingerprint data captured:', capturedData);
+  //     setBase64FeatureData(capturedData);
+  //   } catch (error) {
+  //     console.error('Error capturing fingerprint data:', error);
+  //   }
+  // };
 
-  const verifyFingerprint = async (fingerprintData: string) => {
-    if (!fingerprintData) {
-      console.error('No fingerprint data to verify');
-      return;
-    }
-    try {
-      const result = await TrustFingerReactNativeModule.verifyBiometricData(
-        fingerprintData,
-      );
-      if (!result) {
-        if (result === false) {
-          setIsFingerCaptureSuccess(false);
-        } else {
-          setIsFingerCaptureSuccess(null);
-        }
-      } else if (result === true) {
-        setIsFingerCaptureSuccess(true);
-      }
-      console.log('Fingerprint verification result:', result);
-      // Further processing based on verification result
-    } catch (error) {
-      console.error('Error verifying fingerprint data:', error);
-    }
-  };
+  // const verifyFingerprint = async (fingerprintData: string) => {
+  //   if (!fingerprintData) {
+  //     console.error('No fingerprint data to verify');
+  //     return;
+  //   }
+  //   try {
+  //     const result = await TrustFingerReactNativeModule.verifyBiometricData(
+  //       fingerprintData,
+  //     );
+  //     if (!result) {
+  //       if (result === false) {
+  //         setIsFingerCaptureSuccess(false);
+  //       } else {
+  //         setIsFingerCaptureSuccess(null);
+  //       }
+  //     } else if (result === true) {
+  //       setIsFingerCaptureSuccess(true);
+  //     }
+  //     console.log('Fingerprint verification result:', result);
+  //     // Further processing based on verification result
+  //   } catch (error) {
+  //     console.error('Error verifying fingerprint data:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   if (isFingerCaptureSuccess !== null) {
+  //     setTimeout(() => {
+  //       setIsFingerCaptureSuccess(null);
+  //     }, 5000);
+  //   }
+  // }, [isFingerCaptureSuccess]);
 
   useEffect(() => {
-    if (isFingerCaptureSuccess !== null) {
-      setTimeout(() => {
-        setIsFingerCaptureSuccess(null);
-      }, 5000);
-    }
-  }, [isFingerCaptureSuccess]);
+    setIsFingerCaptureSuccess(controller.selectIsFingerVerified);
+  }, [controller.selectIsFingerVerified]);
 
   return (
     <React.Fragment>
