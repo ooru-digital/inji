@@ -92,6 +92,7 @@ const model = createModel(
     showFaceCaptureSuccessBanner: false,
     isFingerVerified: null as FingerCaptureState,
     votedList: [] as VCMetadata[],
+    isFingerVerifiedorNot: null as any,
   },
   {
     events: {
@@ -100,6 +101,7 @@ const model = createModel(
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
       CAPTURE_AND_UPDATE_VC: (fingerData: string) => ({fingerData}),
+      VERIFY_FINGERPRINT: () => ({}),
       FINGERPRINT_VERIFIED: () => ({}),
       VC_ACCEPTED: () => ({}),
       VC_REJECTED: () => ({}),
@@ -884,28 +886,10 @@ export const scanMachine =
           },
         },
         capturingAndVerifyingVC: {
-          invoke: {
-            id: 'captureAndVerify',
-            src: async (context, event) => {
-              const {fingerData} = event;
-              // console.log('fingerData >>> ', fingerData);
-
-              let verifiedStatus = await verifyFingerprint(fingerData);
-              // let verifiedStatus = true;
-              console.log('verifiedStatus >> ', verifiedStatus);
-
-              context.isFingerVerified = verifiedStatus;
-              setTimeout(() => {
-                if (context.isFingerVerified !== null) {
-                  context.isFingerVerified = null;
-                }
-              }, 5000);
-            },
-            onDone: {
+          on: {
+            VERIFY_FINGERPRINT: {
+              actions: ['verifyFingerprintdata'],
               target: 'nextStateOnSuccess',
-            },
-            onError: {
-              target: 'nextStateOnError',
             },
           },
         },
@@ -931,43 +915,13 @@ export const scanMachine =
           ],
         },
         fingerprintVerified: {
-          // entry: ['removeVc'],
-          entry: [
-            assign(context => {
-              console.log('Fingerprint verified 2!');
-              console.log(
-                'VCMetadata.fromVC(context.selectedVc.vcMetadata[0]) >> ',
-                VCMetadata.fromVC(context.selectedVc.vcMetadata[0]),
-              );
-              context.votedList = [
-                ...context.votedList,
-                VCMetadata.fromVC(context.selectedVc.vcMetadata[0]),
-              ];
-              // fetch("https://mocki.io/v1/5c602d89-015c-4afe-a949-c4e0b22c73e1").then((resp)=>resp.json()).then((data)=>console.log("data: ",data.data)).catch(err=>console.log(err));
-              console.log('context.votedList >>', context.votedList);
-              return context;
-            }),
-            'removeVc',
-          ],
-          // on: {
-          //   FINGER_VERIFIED: {
-          //     target: 'navigatingToSettings',
-          //   },
-          // },
-          // initial: 'idle',
-          // states: {
-          //   idle: {},
-          //   navigatingToSettings: {},
-          // },
-        },
-        fingerprintNotVerified: {
-          entry: [
-            assign(context => {
-              console.log('Fingerprint is not verified.');
-              return context;
-            }),
+          always: [
+            {
+              target: '#scan.reviewing.accepted',
+            },
           ],
         },
+        fingerprintNotVerified: {},
         nextStateOnError: {
           entry: [
             () => {
@@ -1228,7 +1182,20 @@ export const scanMachine =
             to: context => context.serviceRefs.activityLog,
           },
         ),
+        verifyFingerprintdata: assign({
+          isFingerVerifiedorNot: async (context, event) => {
+            const {fingerData} = event;
+            // console.log('fingerData >>> ', fingerData);
 
+            let verifiedStatus = await verifyFingerprint(fingerData);
+            // let verifiedStatus = true;
+            console.log('verifiedStatus >> ', verifiedStatus);
+
+            context.isFingerVerified = verifiedStatus;
+
+            return context;
+          },
+        }),
         sendVcShareSuccessEvent: () => {
           sendImpressionEvent(
             getImpressionEventData(
