@@ -25,6 +25,7 @@ import {
 import {
   ScanEvents,
   selectIsMinimumStorageRequiredForAuditEntryLimitReached,
+  selectVotedList,
 } from '../../machines/bleShare/scan/scanMachine';
 import {BOTTOM_TAB_ROUTES} from '../../routes/routesConstants';
 import {MainBottomTabParamList} from '../../routes/routeTypes';
@@ -100,9 +101,11 @@ export function useScanScreen() {
       selectShowQuickShareSuccessBanner,
     ),
     selectIsInvalid: useSelector(scanService, selectIsInvalid),
+    // votedListVCs: useSelector(scanService, selectVotedListVCs),
     isQrLogin: useSelector(scanService, selectIsShowQrLogin),
     isQrLoginstoring: useSelector(scanService, selectIsQrLoginStoring),
     isQrRef: useSelector(scanService, selectQrLoginRef),
+    votedListVCs: useSelector(scanService, selectVotedList),
     LOCATION_REQUEST: () => scanService.send(ScanEvents.LOCATION_REQUEST()),
     GOTO_SETTINGS: () => scanService.send(ScanEvents.GOTO_SETTINGS()),
     DISMISS: () => scanService.send(ScanEvents.DISMISS()),

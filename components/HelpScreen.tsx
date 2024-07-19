@@ -1,36 +1,73 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
-import {FlatList, Linking, Pressable, SafeAreaView, View} from 'react-native';
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  SafeAreaView,
+  View,
+  Text as RNText,
+} from 'react-native';
 import {Modal} from './ui/Modal';
 import {Column, Text} from './ui';
 import {Theme} from './ui/styleUtils';
 import {BannerNotificationContainer} from './BannerNotificationContainer';
 import getAllConfigurations from '../shared/api';
+import {NativeModules} from 'react-native';
+const {TrustFingerReactNativeModule} = NativeModules;
 
 export const HelpScreen: React.FC<HelpScreenProps> = props => {
   const {t} = useTranslation('HelpScreen');
   const [showHelpPage, setShowHelpPage] = useState(false);
-  var [injiHelpUrl, setInjiHelpUrl] = useState('');
   const listingRef = useRef();
+  const [popupMessage, setPopupMessage] = useState<string | null>(null);
+  const [base64FeatureData, setBase64FeatureData] = useState<string | null>(
+    null,
+  );
 
-  useEffect(() => {
-    getAllConfigurations().then(response => {
-      setInjiHelpUrl(response.aboutInjiUrl);
-    });
-  }, []);
+  const captureBiometric = () => {
+    TrustFingerReactNativeModule.captureBiometricData()
+      .then(capturedBase64FeatureData => {
+        console.log('Capture success:', capturedBase64FeatureData);
+        setBase64FeatureData(capturedBase64FeatureData);
+        setPopupMessage('Biometric data captured successfully');
+        setTimeout(() => {
+          setPopupMessage(null);
+        }, 3000); // Clear message after 3 seconds
+      })
+      .catch(error => {
+        console.error('Error capturing biometric data: ', error);
+        setPopupMessage('Error capturing biometric data');
+        setTimeout(() => {
+          setPopupMessage(null);
+        }, 3000); // Clear message after 3 seconds
+      });
+  };
 
-  useEffect(() => {
-    if (props.source === 'BackUp') {
+  const verifyBiometric = () => {
+    if (base64FeatureData) {
+      TrustFingerReactNativeModule.verifyBiometricData(base64FeatureData)
+        .then(message => {
+          console.log('Verification message:', message);
+          setPopupMessage('Fingerprint verification successful');
+          setTimeout(() => {
+            setPopupMessage(null);
+          }, 3000); // Clear message after 3 seconds
+        })
+        .catch(error => {
+          console.error('Error verifying biometric data: ', error);
+          setPopupMessage('Fingerprint verification failed');
+          setTimeout(() => {
+            setPopupMessage(null);
+          }, 3000); // Clear message after 3 seconds
+        });
+    } else {
+      setPopupMessage('Please capture biometric data first');
       setTimeout(() => {
-        if (listingRef?.current != null) {
-          listingRef.current.scrollToIndex({
-            index: 15,
-            animated: true,
-          });
-        }
-      }, 2000);
+        setPopupMessage(null);
+      }, 3000); // Clear message after 3 seconds
     }
-  }, [showHelpPage]);
+  };
 
   const getTextField = (value: string, component?: React.ReactElement) => {
     return (
@@ -39,6 +76,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
       </Text>
     );
   };
+
   const getLinkedText = (link: string, linkText: string) => {
     return (
       <Text
@@ -50,66 +88,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
       </Text>
     );
   };
-  const BackupFaqMap = [
-    {
-      title: t('questions.backup.one'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.backup.one'))}</React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.two'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.backup.two'))}</React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.three'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.backup.three'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.four'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.backup.four'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.five'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.backup.five'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.six'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.backup.six'))}</React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.seven'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.backup.seven'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.backup.eight'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.backup.eight'))}
-        </React.Fragment>
-      ),
-    },
-  ];
+
   const InjiFaqMap = [
     {
       title: t('questions.inji.one'),
@@ -142,133 +121,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
       data: (
         <React.Fragment>{getTextField(t('answers.inji.four'))}</React.Fragment>
       ),
-    } /*,
-    {
-      title: t('questions.inji.five'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.inji.five'))}</React.Fragment>
-      ),
     },
-    {
-      title: t('questions.inji.six'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.inji.six'))}</React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.seven'),
-      data: (
-        <React.Fragment>
-          {getTextField(
-            t('answers.inji.seven'),
-            getLinkedText(
-              injiHelpUrl + '/end-user-guide#downloading-vc',
-              t('here'),
-            ),
-          )}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.eight'),
-      data: (
-        <React.Fragment>{getTextField(t('answers.inji.eight'))}</React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.nine'),
-      data: (
-        <React.Fragment>
-          {getTextField(
-            t('answers.inji.nine'),
-            getLinkedText(
-              injiHelpUrl + '/end-user-guide#activating-a-vc',
-              t('here'),
-            ),
-          )}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.ten'),
-      data: (
-        <React.Fragment>
-          {getTextField(
-            t('answers.inji.ten-a'),
-            getLinkedText(
-              injiHelpUrl +
-                '/overview/features/feature-workflows#id-4.-qr-code-login-process',
-              t('here'),
-            ),
-          )}
-          {getTextField(t('answers.inji.ten-b'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.eleven'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.eleven'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.twelve'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.twelve'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.sixteen'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.sixteen'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.seventeen'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.seventeen'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.thirteen'),
-      data: (
-        <React.Fragment>
-          {getTextField(
-            t('answers.inji.thirteen-a'),
-            getLinkedText(
-              injiHelpUrl + '/end-user-guide#deleting-a-vc',
-              t('here'),
-            ),
-          )}
-          {getTextField(t('answers.inji.thirteen-b'))}
-        </React.Fragment>
-      ),
-    },
-
-    {
-      title: t('questions.inji.fourteen'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.fourteen'))}
-        </React.Fragment>
-      ),
-    },
-    {
-      title: t('questions.inji.fifteen'),
-      data: (
-        <React.Fragment>
-          {getTextField(t('answers.inji.fifteen'))}
-        </React.Fragment>
-      ),
-    }, */,
   ];
 
   return (
@@ -300,7 +153,6 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
                   {item.data}
                 </View>
               )}
-              //data={[...InjiFaqMap, ...BackupFaqMap]}
               data={[...InjiFaqMap]}
               onScrollToIndexFailed={info => {
                 const wait = new Promise(resolve => setTimeout(resolve, 500));
@@ -314,7 +166,46 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
             />
           </Column>
         </SafeAreaView>
+        <View style={{padding: 10}}>
+          <Pressable
+            style={{
+              backgroundColor: '#007bff',
+              padding: 10,
+              alignItems: 'center',
+              borderRadius: 5,
+            }}
+            onPress={captureBiometric}>
+            <Text style={{color: 'white'}}>Capture Biometric</Text>
+          </Pressable>
+          <Pressable
+            style={{
+              marginTop: 10,
+              backgroundColor: '#28a745',
+              padding: 10,
+              alignItems: 'center',
+              borderRadius: 5,
+            }}
+            onPress={verifyBiometric}>
+            <Text style={{color: 'white'}}>Verify Biometric</Text>
+          </Pressable>
+        </View>
       </Modal>
+      {popupMessage && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 20,
+            left: 20,
+            right: 20,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            padding: 10,
+            borderRadius: 5,
+          }}>
+          <RNText style={{color: 'white', textAlign: 'center'}}>
+            {popupMessage}
+          </RNText>
+        </View>
+      )}
     </React.Fragment>
   );
 };
@@ -323,3 +214,5 @@ interface HelpScreenProps {
   source: 'Inji' | 'BackUp';
   triggerComponent: React.ReactElement;
 }
+
+export default HelpScreen;

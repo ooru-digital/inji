@@ -15,7 +15,7 @@ import {getMosipIdentifier} from '../commonUtil';
 // FIXME: Ed25519Signature2018 not fully supported yet.
 // Ed25519Signature2018 proof type check is not tested with its real credential
 const ProofType = {
-  ED25519: 'Ed25519Signature2018',
+  ED25519: 'Ed25519Signature2020',
   RSA: 'RsaSignature2018',
 };
 

@@ -8,10 +8,16 @@ import {useReceivedVcsTab} from '../Home/ReceivedVcsTabController';
 import {ReceivedCardsModal} from './ReceivedCardsModal';
 import testIDProps from '../../shared/commonUtil';
 import {SvgImage} from '../../components/ui/svg';
+import {useSelector} from '@xstate/react';
+import {useScanScreen} from '../Scan/ScanScreenController';
 
 export const ReceivedCards: React.FC = () => {
   const {t} = useTranslation('ReceivedVcsTab');
   const controller = useReceivedVcsTab();
+  const scanController = useScanScreen();
+
+  // console.log("in received cards .tsx")
+  // console.log("scanController.votedListVCs >>> ",scanController.votedListVCs)
 
   return (
     <React.Fragment>
@@ -32,6 +38,7 @@ export const ReceivedCards: React.FC = () => {
       <ReceivedCardsModal
         isVisible={controller.isVisible}
         controller={controller}
+        scanController={scanController}
         onDismiss={controller.TOGGLE_RECEIVED_CARDS}
       />
     </React.Fragment>

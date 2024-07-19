@@ -665,6 +665,11 @@
       "captureFailureTitle": "Face verification failed!",
       "captureFailureMessage": "Please ensure that your face is clearly visible and try taking selfie again."
     },
+    "postFingerCapture": {
+      "captureSuccessMessage": "Finger Verification is successful!",
+      "captureFailureMessage": "Please clean your finger and try scanning it again.",
+      "captureFingerprintMissing": "Finger verification failed!"
+    },
     "rational": {
       "title": "Turn on your location",
       "message": "This app needs your location to search for nearby systems to receive your data.",
@@ -683,6 +688,7 @@
     "acceptRequest": "Share",
     "acceptRequestAndVerify": "Vote",
     "authWithFingerPrint": "Fingerprint Auth",
+    "captureFingerPrint": "Capture Fingerprint",
     "authWithFace": "Face Auth",
     "reject": "Reject",
     "consentToPhotoVerification": "I give consent to have my photo taken for authentication",

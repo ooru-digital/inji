@@ -63,8 +63,11 @@ import {getIdType} from '../../../shared/openId4VCI/Utils';
 import {VcMetaEvents} from '../../VerifiableCredential/VCMetaMachine/VCMetaMachine';
 // @ts-ignore
 import {decodeData} from '@mosip/pixelpass';
+import {verifyFingerprint} from '../../../screens/fingerPrint/verifyFingerprint';
 
 const {wallet, EventTypes, VerificationStatus} = tuvali;
+
+type FingerCaptureState = true | false | null;
 
 const model = createModel(
   {
@@ -87,6 +90,9 @@ const model = createModel(
     showFaceAuthConsent: true as boolean,
     readyForBluetoothStateCheck: false,
     showFaceCaptureSuccessBanner: false,
+    isFingerVerified: null as FingerCaptureState,
+    votedList: [] as VCMetadata[],
+    isFingerVerifiedorNot: null as any,
   },
   {
     events: {
@@ -94,6 +100,9 @@ const model = createModel(
       SCAN: (params: string) => ({params}),
       ACCEPT_REQUEST: () => ({}),
       VERIFY_AND_ACCEPT_REQUEST: () => ({}),
+      CAPTURE_AND_UPDATE_VC: (fingerData: string) => ({fingerData}),
+      VERIFY_FINGERPRINT: () => ({}),
+      FINGERPRINT_VERIFIED: () => ({}),
       VC_ACCEPTED: () => ({}),
       VC_REJECTED: () => ({}),
       VC_SENT: () => ({}),
@@ -124,6 +133,7 @@ const model = createModel(
       CHECK_FLOW_TYPE: () => ({}),
       UPDATE_VC_NAME: (vcName: string) => ({vcName}),
       STORE_RESPONSE: (response: any) => ({response}),
+      // FINGER_VERIFIED: () => ({}),
       APP_ACTIVE: () => ({}),
       FACE_VALID: () => ({}),
       FACE_INVALID: () => ({}),
@@ -180,6 +190,10 @@ export const scanMachine =
         DISMISS_QUICK_SHARE_BANNER: {
           actions: 'resetShowQuickShareSuccessBanner',
           target: '.inactive',
+        },
+        CAPTURE_AND_UPDATE_VC: {
+          actions: 'logCaptureAndVerify', // Optional: Log action
+          target: 'capturingAndVerifyingVC',
         },
       },
       states: {
@@ -871,6 +885,50 @@ export const scanMachine =
             },
           },
         },
+        capturingAndVerifyingVC: {
+          on: {
+            VERIFY_FINGERPRINT: {
+              actions: ['verifyFingerprintdata'],
+              target: 'nextStateOnSuccess',
+            },
+          },
+        },
+        nextStateOnSuccess: {
+          always: [
+            {
+              cond: 'isFingerprintVerified',
+              target: 'fingerprintVerified',
+              actions: [
+                // any actions to be performed when transitioning to fingerprintVerified state
+                () => {
+                  console.log('Fingerprint verified!');
+                },
+              ],
+            },
+            {
+              cond: 'isFingerprintNotVerified',
+              target: 'fingerprintNotVerified',
+              actions: [
+                // any actions to be performed when transitioning to fingerprintNotVerified state
+              ],
+            },
+          ],
+        },
+        fingerprintVerified: {
+          always: [
+            {
+              target: '#scan.reviewing.accepted',
+            },
+          ],
+        },
+        fingerprintNotVerified: {},
+        nextStateOnError: {
+          entry: [
+            () => {
+              console.log('error occored while verifying finger print');
+            },
+          ],
+        },
       },
     },
     {
@@ -1124,7 +1182,20 @@ export const scanMachine =
             to: context => context.serviceRefs.activityLog,
           },
         ),
+        verifyFingerprintdata: assign({
+          isFingerVerifiedorNot: async (context, event) => {
+            const {fingerData} = event;
+            // console.log('fingerData >>> ', fingerData);
 
+            let verifiedStatus = await verifyFingerprint(fingerData);
+            // let verifiedStatus = true;
+            console.log('verifiedStatus >> ', verifiedStatus);
+
+            context.isFingerVerified = verifiedStatus;
+
+            return context;
+          },
+        }),
         sendVcShareSuccessEvent: () => {
           sendImpressionEvent(
             getImpressionEventData(
@@ -1144,7 +1215,7 @@ export const scanMachine =
           (context: any) => {
             return StoreEvents.REMOVE(
               MY_VCS_STORE_KEY,
-              VCMetadata.fromVC(context.selectedVc.vcMetadata).getVcKey(),
+              VCMetadata.fromVC(context.selectedVc.vcMetadata[0]).getVcKey(),
             );
           },
           {to: context => context.serviceRefs.store},
@@ -1196,6 +1267,9 @@ export const scanMachine =
               {comment: 'VC sharing timeout'},
             ),
           );
+        },
+        logCaptureAndVerify: () => {
+          console.log('Capturing and verifying VC...');
         },
       },
 
@@ -1415,6 +1489,9 @@ export const scanMachine =
 
         isFlowTypeSimpleShare: context =>
           context.flowType === VCShareFlowType.SIMPLE_SHARE,
+
+        isFingerprintVerified: context => context.isFingerVerified === true,
+        isFingerprintNotVerified: context => !context.isFingerVerified === true,
       },
 
       delays: {
@@ -1450,4 +1527,10 @@ export function selectIDfromScanSearch(state: State) {
 
 export function selectIsIdScanDone(state: State) {
   return state.matches('setSearchTextHome');
+}
+export function selectIsFingerVerified(state: State) {
+  return state.context.isFingerVerified;
+}
+export function selectVotedList(state: State) {
+  return state.context.votedList;
 }

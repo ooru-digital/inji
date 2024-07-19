@@ -32,6 +32,12 @@ export function selectVerifiableCredentialData(state: State) {
         issuer: vcMetadata.issuer,
         face: state.context.credential?.biometrics?.face,
         issuerLogo: getMosipLogo(),
+        left_finger:
+          state.context.verifiableCredential?.credential.credentialSubject
+            .finger.left_thumb,
+        right_finger:
+          state.context.verifiableCredential?.credential.credentialSubject
+            .finger.right_thumb,
       };
 }
 

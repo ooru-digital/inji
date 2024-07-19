@@ -1,10 +1,10 @@
-import React, {useContext, useEffect, useRef} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
+import {NativeModules, BackHandler} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {Button, Column, Text} from '../../components/ui';
 import {Theme} from '../../components/ui/styleUtils';
 import {useSendVcScreen} from './SendVcScreenController';
 import {VerifyIdentityOverlay} from '../VerifyIdentityOverlay';
-import {BackHandler} from 'react-native';
 import {useInterpret} from '@xstate/react';
 import {GlobalContext} from '../../shared/GlobalContext';
 import {useFocusEffect} from '@react-navigation/native';
@@ -24,11 +24,24 @@ import {Issuers} from '../../shared/openId4VCI/Utils';
 import {FaceVerificationAlertOverlay} from './FaceVerificationAlertOverlay';
 import {Error} from '../../components/ui/Error';
 import {SvgImage} from '../../components/ui/svg';
+import {Loader} from '../../components/ui/Loader';
+
+const {TrustFingerReactNativeModule} = NativeModules;
+
+type FingerCaptureState = true | false | null;
 
 export const SendVcScreen: React.FC = () => {
   const {t} = useTranslation('SendVcScreen');
+
+  const [isFingerCaptureSuccess, setIsFingerCaptureSuccess] =
+    useState<FingerCaptureState>(null);
+
   const {appService} = useContext(GlobalContext);
   const controller = useSendVcScreen();
+  const [base64FeatureData, setBase64FeatureData] = useState<string | null>(
+    null,
+  );
+
   let shareableVcsMetadataOrderedByPinStatus = getVCsOrderedByPinStatus(
     controller.shareableVcsMetadata,
   );
@@ -54,7 +67,8 @@ export const SendVcScreen: React.FC = () => {
     if (service) {
       controller.SELECT_VC_ITEM(0)(service);
     }
-  }, []);
+  }, [service]);
+
   useEffect(() => {
     sendImpressionEvent(
       getImpressionEventData(
@@ -77,6 +91,54 @@ export const SendVcScreen: React.FC = () => {
     }, []),
   );
 
+  // const captureFingerprint = async () => {
+  //   try {
+  //     const capturedData =
+  //       await TrustFingerReactNativeModule.captureBiometricData();
+  //     console.log('Fingerprint data captured:', capturedData);
+  //     setBase64FeatureData(capturedData);
+  //   } catch (error) {
+  //     console.error('Error capturing fingerprint data:', error);
+  //   }
+  // };
+
+  // const verifyFingerprint = async (fingerprintData: string) => {
+  //   if (!fingerprintData) {
+  //     console.error('No fingerprint data to verify');
+  //     return;
+  //   }
+  //   try {
+  //     const result = await TrustFingerReactNativeModule.verifyBiometricData(
+  //       fingerprintData,
+  //     );
+  //     if (!result) {
+  //       if (result === false) {
+  //         setIsFingerCaptureSuccess(false);
+  //       } else {
+  //         setIsFingerCaptureSuccess(null);
+  //       }
+  //     } else if (result === true) {
+  //       setIsFingerCaptureSuccess(true);
+  //     }
+  //     console.log('Fingerprint verification result:', result);
+  //     // Further processing based on verification result
+  //   } catch (error) {
+  //     console.error('Error verifying fingerprint data:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   if (isFingerCaptureSuccess !== null) {
+  //     setTimeout(() => {
+  //       setIsFingerCaptureSuccess(null);
+  //     }, 5000);
+  //   }
+  // }, [isFingerCaptureSuccess]);
+
+  useEffect(() => {
+    setIsFingerCaptureSuccess(controller.selectIsFingerVerified);
+  }, [controller.selectIsFingerVerified]);
+
   return (
     <React.Fragment>
       <Column fill backgroundColor={Theme.Colors.lightGreyBackgroundColor}>
@@ -89,6 +151,27 @@ export const SendVcScreen: React.FC = () => {
             {t('pleaseSelectAnId')}
           </Text>
         </Column>
+        {isFingerCaptureSuccess === true ? (
+          <Column width={'100%'} backgroundColor="#25b653">
+            <Text
+              margin="15 0 13 24"
+              weight="bold"
+              color={'#ffffff'}
+              style={{position: 'relative'}}>
+              {t('ScanScreen:postFingerCapture:captureSuccessMessage')}
+            </Text>
+          </Column>
+        ) : isFingerCaptureSuccess === false ? (
+          <Column width={'100%'} backgroundColor="#e62929">
+            <Text
+              margin="15 0 13 24"
+              weight="bold"
+              color={'#ffffff'}
+              style={{position: 'relative'}}>
+              {t('ScanScreen:postFingerCapture:captureFingerprintMissing')}
+            </Text>
+          </Column>
+        ) : null}
         <Column scroll>
           {shareableVcsMetadataOrderedByPinStatus.map((vcMetadata, index) => (
             <VcItemContainer
@@ -106,23 +189,38 @@ export const SendVcScreen: React.FC = () => {
         <Column
           style={Theme.SendVcScreenStyles.shareOptionButtonsContainer}
           backgroundColor={Theme.Colors.whiteBackgroundColor}>
+          {/* {([Issuers.Mosip, Issuers.ESignet].indexOf(
+            controller.verifiableCredentialData.finger?.left_thumb,
+          ) ||
+            [Issuers.Mosip, Issuers.ESignet].indexOf(
+              controller.verifiableCredentialData.finger?.right_thumb,
+            )) === -1 && (
+            <Button
+              type="gradient"
+              title={t('captureFingerPrint')}
+              styles={{marginTop: 12}}
+              onPress={captureFingerprint}
+            />
+          )} */}
+
           {[Issuers.Mosip, Issuers.ESignet].indexOf(
             controller.verifiableCredentialData.issuer,
           ) !== -1 && (
             <Button
               type="gradient"
-              //title={t('acceptRequestAndVerify')}
               title={t('authWithFingerPrint')}
               styles={{marginTop: 12}}
               disabled={controller.selectedIndex == null}
-              onPress={controller.VERIFY_AND_ACCEPT_REQUEST}
+              onPress={() => {
+                controller.CAPTURE_AND_UPDATE_VC(
+                  shareableVcsMetadataOrderedByPinStatus[0].finger,
+                );
+              }}
             />
           )}
-
           <Button
             type="gradient"
             styles={{marginTop: 12}}
-            // title={t('acceptRequest')}
             title={t('authWithFace')}
             disabled={controller.selectedIndex == null}
             onPress={controller.ACCEPT_REQUEST}
