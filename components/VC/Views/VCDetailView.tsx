@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Image, ImageBackground, View} from 'react-native';
+import {WebView} from 'react-native-webview';
 import {
   VerifiableCredential,
   WalletBindingResponse,
@@ -8,7 +9,6 @@ import {
 import {Button, Column, Row, Text} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
 import {QrCodeOverlay} from '../../QrCodeOverlay';
-import {SvgImage} from '../../ui/svg';
 import {
   getDetailedViewFields,
   isActivationNeeded,
@@ -24,6 +24,7 @@ import {
 import {setTextColor} from '../common/VCItemField';
 import {ActivityIndicator} from '../../ui/ActivityIndicator';
 import {ProfileIcon} from '../../ProfileIcon';
+import {SvgXml} from 'react-native-svg'; // Added SvgXml for rendering SVGs
 
 const getProfileImage = (face: any) => {
   if (face) {
@@ -39,14 +40,35 @@ const getProfileImage = (face: any) => {
   );
 };
 
+// Helper function to render SVG or PNG image based on the data
+const renderLogoImage = logo => {
+  if (!logo) return null;
+
+  if (logo.startsWith('data:image/svg+xml;base64,')) {
+    const base64Svg = logo.replace('data:image/svg+xml;base64,', '');
+    return <SvgXml xml={atob(base64Svg)} width="80" height="80" />;
+  } else if (logo.startsWith('data:image/png;base64,')) {
+    return (
+      <Image
+        source={{uri: logo}}
+        style={{width: 80, height: 80}}
+        resizeMethod="scale"
+        resizeMode="contain"
+      />
+    );
+  }
+  return null;
+};
+
 export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const {t, i18n} = useTranslation('VcDetails');
-  const logo = props.verifiableCredentialData.issuerLogo;
+  const logo = props.credential?.credentialSubject['issuer_logo'];
   const face = props.verifiableCredentialData.face;
-  const credentialId = props.credential?.credentialSubject['credential_id'];
+  const publicUrl = props.credential?.credentialSubject['public_verify_url'];
   const verifiableCredential = props.credential;
-  let [fields, setFields] = useState([]);
+  const [fields, setFields] = useState([]);
   const [wellknown, setWellknown] = useState(null);
+  const [showWebView, setShowWebView] = useState(false); // State to toggle WebView
 
   useEffect(() => {
     getDetailedViewFields(
@@ -80,156 +102,104 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
     return <ActivityIndicator />;
   }
 
+  // Function to handle opening the WebView
+  const handleOpenWebView = () => {
+    setShowWebView(true); // Show the WebView when the button is clicked
+  };
+
   return (
     <>
-      <Column scroll>
-        <Column fill>
-          <Column
-            padding="10 10 3 10"
-            backgroundColor={Theme.Colors.DetailedViewBackground}>
-            <ImageBackground
-              imageStyle={{width: '100%'}}
-              resizeMethod="scale"
-              resizeMode="stretch"
-              style={[
-                Theme.Styles.openCardBgContainer,
-                setBackgroundColour(wellknown),
-              ]}
-              source={Theme.OpenCard}>
-              <Row padding="14 14 0 14" margin="0 0 0 0">
-                <Column crossAlign="center">
-                  {getProfileImage(face)}
-                  <QrCodeOverlay
-                    verifiableCredential={verifiableCredential}
-                    meta={props.verifiableCredentialData.vcMetadata}
-                  />
-                  <Column
-                    width={80}
-                    height={59}
-                    crossAlign="center"
-                    margin="12 0 0 0">
-                    <Image
-                      src={logo?.url}
-                      alt={logo?.alt_text}
-                      style={Theme.Styles.issuerLogo}
-                      resizeMethod="scale"
-                      resizeMode="contain"
-                    />
+      {showWebView ? (
+        <WebView source={{uri: publicUrl}} style={{flex: 1}} />
+      ) : (
+        <Column scroll>
+          <Column fill>
+            <Column
+              padding="10 10 3 10"
+              backgroundColor={Theme.Colors.DetailedViewBackground}>
+              <ImageBackground
+                imageStyle={{width: '100%'}}
+                resizeMethod="scale"
+                resizeMode="stretch"
+                style={[
+                  Theme.Styles.openCardBgContainer,
+                  setBackgroundColour(wellknown),
+                ]}
+                source={Theme.OpenCard}>
+                <Row padding="14 14 0 14" margin="0 0 0 0">
+                  <Column crossAlign="center">
+                    {getProfileImage(face)}
+                    {/* <QrCodeOverlay
+                      verifiableCredential={verifiableCredential}
+                      meta={props.verifiableCredentialData.vcMetadata}
+                    /> */}
+                    <Column
+                      width={80}
+                      height={59}
+                      crossAlign="center"
+                      margin="12 0 0 0">
+                      {renderLogoImage(logo)}
+                    </Column>
                   </Column>
-                </Column>
-                <Column
-                  align="space-evenly"
-                  margin={'0 0 0 24'}
-                  style={{flex: 1}}>
-                  {fieldItemIterator(
-                    fields,
-                    verifiableCredential,
-                    wellknown,
-                    props,
-                  )}
-                </Column>
-              </Row>
-              {shouldShowHrLine(verifiableCredential) && (
-                <>
-                  <View
-                    style={[
-                      Theme.Styles.hrLine,
-                      {
-                        borderBottomColor: setTextColor(wellknown, 'hrLine')
-                          ?.color,
-                      },
-                    ]}></View>
-                  <Column padding="0 14 14 14">
+
+                  <Column
+                    align="space-evenly"
+                    margin={'0 0 0 14'}
+                    style={{flex: 1}}>
                     {fieldItemIterator(
-                      DETAIL_VIEW_BOTTOM_SECTION_FIELDS,
+                      fields,
                       verifiableCredential,
                       wellknown,
                       props,
                     )}
                   </Column>
-                </>
-              )}
-            </ImageBackground>
-          </Column>
-        </Column>
-      </Column>
-      {/* {props.vcHasImage && (
-        <View
-          style={{
-            position: 'relative',
-            backgroundColor: Theme.Colors.DetailedViewBackground,
-          }}>
-          {props.activeTab !== 1 &&
-            (!props.walletBindingResponse &&
-            isActivationNeeded(props.verifiableCredentialData?.issuer) ? (
-              <Column
-                padding="10"
-                style={Theme.Styles.detailedViewActivationPopupContainer}>
-                <Row>
-                  <Column crossAlign="flex-start" margin={'2 0 0 10'}>
-                    {SvgImage.WalletUnActivatedLargeIcon()}
-                  </Column>
-                  <Column crossAlign="flex-start" margin={'5 18 13 8'}>
-                    <Text
-                      testID="offlineAuthDisabledHeader"
-                      style={{
-                        fontFamily: 'Inter_600SemiBold',
-                        fontSize: 14,
+                  <Column
+                    width={20}
+                    height={10}
+                    crossAlign="center"
+                    margin="50 0 0 0"
+                    style={{flex: 1}}>
+                    <Button
+                      title="View"
+                      onPress={handleOpenWebView}
+                      type="gradient"
+                      size="Small"
+                      styles={{
+                        width: 80,
+                        height: 80,
+                        paddingVertical: 5,
+                        paddingHorizontal: 10,
                       }}
-                      color={Theme.Colors.statusLabel}
-                      margin={'0 18 0 0'}>
-                      {t('offlineAuthDisabledHeader')}
-                    </Text>
-                    <Text
-                      testID="offlineAuthDisabledMessage"
-                      style={{
-                        fontFamily: 'Inter_400Regular',
-                        fontSize: 12,
-                      }}
-                      color={Theme.Colors.statusMessage}
-                      margin={'0 18 0 0'}>
-                      {t('offlineAuthDisabledMessage')}
-                    </Text>
+                    />
                   </Column>
                 </Row>
 
-                <Button
-                  testID="enableVerification"
-                  title={t('enableVerification')}
-                  onPress={props.onBinding}
-                  type="gradient"
-                  size="Large"
-                />
-              </Column>
-            ) : (
-              <Column
-                style={Theme.Styles.detailedViewActivationPopupContainer}
-                padding="10">
-                <Row>
-                  <Column crossAlign="flex-start" margin={'2 0 0 10'}>
-                    {SvgImage.WalletActivatedLargeIcon()}
-                  </Column>
-                  <Column crossAlign="flex-start" margin={'5 18 13 8'}>
-                    <Text
-                      testID="profileAuthenticated"
-                      color={Theme.Colors.statusLabel}
-                      style={{
-                        fontFamily: 'Inter_600SemiBold',
-                        fontSize: 14,
-                      }}
-                      margin={'0 18 0 0'}>
-                      {isActivationNeeded(
-                        props.verifiableCredentialData?.issuer,
-                      )
-                        ? t('profileAuthenticated')
-                        : t('credentialActivated')}
-                    </Text>
-                  </Column>
-                </Row>
-              </Column>
-            ))}
-        </View>
-      )} */}
+                {shouldShowHrLine(verifiableCredential) && (
+                  <>
+                    <View
+                      style={[
+                        Theme.Styles.hrLine,
+                        {
+                          borderBottomColor: setTextColor(wellknown, 'hrLine')
+                            ?.color,
+                        },
+                      ]}
+                    />
+                    <Column padding="0 14 14 14">
+                      {fieldItemIterator(
+                        DETAIL_VIEW_BOTTOM_SECTION_FIELDS,
+                        verifiableCredential,
+                        wellknown,
+                        props,
+                      )}
+                    </Column>
+                  </>
+                )}
+              </ImageBackground>
+            </Column>
+          </Column>
+        </Column>
+      )}
     </>
   );
 };
@@ -239,6 +209,6 @@ export interface VCItemDetailsProps {
   verifiableCredentialData: any;
   walletBindingResponse: WalletBindingResponse;
   onBinding?: () => void;
-  activeTab?: Number;
+  activeTab?: number;
   vcHasImage: boolean;
 }
