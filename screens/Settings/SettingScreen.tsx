@@ -132,7 +132,7 @@ export const SettingScreen: React.FC<
           />
 
           <LanguageSetting />
-          <ListItem topDivider disabled={!controller.canUseBiometrics}>
+          {/* <ListItem topDivider disabled={!controller.canUseBiometrics}>
             <Icon
               type={'MaterialCommunityIcons'}
               name={'fingerprint'}
@@ -161,7 +161,7 @@ export const SettingScreen: React.FC<
               }}
               color={Theme.Colors.switchHead}
             />
-          </ListItem>
+          </ListItem> */}
 
           <AboutInji appId={controller.appId} />
 
@@ -194,7 +194,7 @@ export const SettingScreen: React.FC<
             />
           )}
 
-          <ListItem
+          {/* <ListItem
             topDivider
             bottomDivider
             onPress={() => controller.INJI_TOUR_GUIDE()}>
@@ -213,7 +213,7 @@ export const SettingScreen: React.FC<
                 </Text>
               </ListItem.Title>
             </ListItem.Content>
-          </ListItem>
+          </ListItem> */}
 
           <ListItem onPress={controller.LOGOUT}>
             <Icon
