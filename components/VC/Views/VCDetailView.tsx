@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Image, ImageBackground, View} from 'react-native';
+import {Image, ImageBackground, View, TouchableOpacity} from 'react-native';
 import {WebView} from 'react-native-webview';
 import {
   VerifiableCredential,
@@ -82,6 +82,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
     });
   }, [props.verifiableCredentialData?.wellKnown]);
 
+  const viewIcon = require('../../../assets/View-Icon.jpg');
   const shouldShowHrLine = verifiableCredential => {
     const availableFieldNames = Object.keys(
       verifiableCredential?.credentialSubject,
@@ -158,19 +159,21 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     height={10}
                     crossAlign="center"
                     margin="50 0 0 0"
-                    style={{flex: 1}}>
-                    <Button
-                      title="View"
-                      onPress={handleOpenWebView}
-                      type="gradient"
-                      size="Small"
-                      styles={{
-                        width: 80,
-                        height: 80,
-                        paddingVertical: 5,
-                        paddingHorizontal: 10,
-                      }}
-                    />
+                    style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={handleOpenWebView}>
+                      {/* Use Image for PNG icons */}
+                      <Image
+                        source={viewIcon}
+                        style={{
+                          width: 80,
+                          height: 80,
+                          paddingVertical: 5,
+                          paddingHorizontal: 10,
+                        }}
+                      />
+                      {/* Alternatively, use SvgXml for SVG icons */}
+                      {/* <SvgXml xml={yourSvgXmlData} width="80" height="80" /> */}
+                    </TouchableOpacity>
                   </Column>
                 </Row>
 

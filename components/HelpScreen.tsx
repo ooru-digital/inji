@@ -111,7 +111,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
     },
   ];
   const InjiFaqMap = [
-    {
+   /* {
       title: t('questions.inji.one'),
       data: (
         <React.Fragment>{getTextField(t('answers.inji.one'))}</React.Fragment>
@@ -140,7 +140,7 @@ export const HelpScreen: React.FC<HelpScreenProps> = props => {
           {getTextField(t('answers.inji.three-c'))}
         </React.Fragment>
       ),
-    },
+    },*/
     {
       title: t('questions.inji.four'),
       data: (

@@ -7,7 +7,7 @@ import {VerifiableCredential} from '../../../machines/VerifiableCredential/VCMet
 import {Column, Row} from '../../ui';
 import {Theme} from '../../ui/styleUtils';
 import {CheckBox, Icon} from 'react-native-elements';
-import {SvgImage} from '../../ui/svg';
+import {SvgXml} from 'react-native-svg'; // Import for SVG rendering
 import {VcItemContainerProfileImage} from '../../VcItemContainerProfileImage';
 import {isVCLoaded, setBackgroundColour} from '../common/VCUtils';
 import {setTextColor, VCItemFieldValue} from '../common/VCItemField';
@@ -17,6 +17,25 @@ import {Issuers} from '../../../shared/openId4VCI/Utils';
 import {VCItemContainerFlowType} from '../../../shared/Utils';
 import {RemoveVcWarningOverlay} from '../../../screens/Home/MyVcs/RemoveVcWarningOverlay';
 import {HistoryTab} from '../../../screens/Home/MyVcs/HistoryTab';
+
+const renderLogoImage = (logo) => {
+  if (!logo) return null;
+
+  if (logo.startsWith('data:image/svg+xml;base64,')) {
+    const base64Svg = logo.replace('data:image/svg+xml;base64,', '');
+    return <SvgXml xml={atob(base64Svg)} width="80" height="80" />;
+  } else if (logo.startsWith('data:image/png;base64,') || logo.startsWith('data:image/jpeg;base64,')) {
+    return (
+      <Image
+        source={{uri: logo}}
+        style={{width: 80, height: 80}}
+        resizeMethod="scale"
+        resizeMode="contain"
+      />
+    );
+  }
+  return null;
+};
 
 export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
   const isVCSelectable = props.selectable && (
@@ -34,7 +53,8 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
       onPress={() => props.onPress()}
     />
   );
-  const issuerLogo = props.verifiableCredentialData.issuerLogo;
+
+  const issuerLogo = props.credential?.credentialSubject['issuer_logo'];
   const faceImage = props.verifiableCredentialData.face;
 
   return (
@@ -75,13 +95,7 @@ export const VCCardViewContent: React.FC<VCItemContentProps> = props => {
           </Column>
 
           {isVCLoaded(props.credential, props.fields) && (
-            <Image
-              src={issuerLogo?.url}
-              alt={issuerLogo?.alt_text}
-              style={Theme.Styles.issuerLogo}
-              resizeMethod="scale"
-              resizeMode="contain"
-            />
+            renderLogoImage(issuerLogo) // Use the new renderLogoImage function here
           )}
 
           {!Object.values(VCItemContainerFlowType).includes(props.flow) && (
