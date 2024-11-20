@@ -26,7 +26,7 @@ export const DETAIL_VIEW_DEFAULT_FIELDS = [
 export const CARD_VIEW_ADD_ON_FIELDS = ['UIN', 'VID'];
 export const DETAIL_VIEW_ADD_ON_FIELDS = [
   'UIN',
-  'VID',
+  'CertificateID',
   'status',
   'credentialRegistry',
   'idType',
@@ -72,6 +72,8 @@ export const getFieldValue = (
       return getLocalizedField(
         getFullAddress(verifiableCredential?.credentialSubject),
       );
+    case 'CertificateID':
+      return props.credential?.credentialSubject['credential_id'];
     default: {
       const fieldValue = verifiableCredential?.credentialSubject[field];
       if (Array.isArray(fieldValue) && typeof fieldValue[0] !== 'object') {
@@ -83,6 +85,9 @@ export const getFieldValue = (
 };
 
 export const getFieldName = (field: string, wellknown: any) => {
+  if (field == 'CertificateID') {
+    return 'Certificate ID';
+  }
   if (wellknown && wellknown.credentials_supported) {
     const fieldObj =
       wellknown.credentials_supported[0].credential_definition
@@ -94,6 +99,7 @@ export const getFieldName = (field: string, wellknown: any) => {
       return getLocalizedField(newFieldObj);
     }
   }
+
   return i18n.t(`VcDetails:${field}`);
 };
 

@@ -1,6 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Image, ImageBackground, View} from 'react-native';
+import {
+  Image,
+  ImageBackground,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import {
   VerifiableCredential,
   WalletBindingResponse,
@@ -24,6 +30,7 @@ import {
 import {setTextColor} from '../common/VCItemField';
 import {ActivityIndicator} from '../../ui/ActivityIndicator';
 import {ProfileIcon} from '../../ProfileIcon';
+import {WebView} from 'react-native-webview';
 
 const getProfileImage = (face: any) => {
   if (face) {
@@ -42,10 +49,12 @@ const getProfileImage = (face: any) => {
 export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
   const {t, i18n} = useTranslation('VcDetails');
   const logo = props.verifiableCredentialData.issuerLogo;
+  const publicUrl = props.credential?.credentialSubject['public_verify_url'];
   const face = props.verifiableCredentialData.face;
   const verifiableCredential = props.credential;
-  let [fields, setFields] = useState([]);
+  const [fields, setFields] = useState([]);
   const [wellknown, setWellknown] = useState(null);
+  const [showWebView, setShowWebView] = useState(false); // State to toggle WebView
 
   useEffect(() => {
     getDetailedViewFields(
@@ -58,6 +67,8 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
       setFields(response.fields);
     });
   }, [props.verifiableCredentialData?.wellKnown]);
+
+  const viewIcon = require('../../../assets/share.png');
 
   const shouldShowHrLine = verifiableCredential => {
     const availableFieldNames = Object.keys(
@@ -77,6 +88,30 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
 
   if (!isVCLoaded(verifiableCredential, fields)) {
     return <ActivityIndicator />;
+  }
+
+  const handleOpenWebView = () => {
+    setShowWebView(true); // Show the WebView when the button is clicked
+  };
+
+  const handleCloseWebView = () => {
+    setShowWebView(false); // Close the WebView
+  };
+
+  if (showWebView) {
+    return (
+      <View style={styles.webViewContainer}>
+        <TouchableOpacity
+          onPress={handleCloseWebView}
+          style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>X</Text>
+        </TouchableOpacity>
+        <WebView
+          source={{uri: publicUrl}} // Replace with your desired URL
+          style={styles.webView}
+        />
+      </View>
+    );
   }
 
   return (
@@ -108,8 +143,7 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
                     crossAlign="center"
                     margin="12 0 0 0">
                     <Image
-                      src={logo?.url}
-                      alt={logo?.alt_text}
+                      source={{uri: logo?.url}}
                       style={Theme.Styles.issuerLogo}
                       resizeMethod="scale"
                       resizeMode="contain"
@@ -151,93 +185,74 @@ export const VCDetailView: React.FC<VCItemDetailsProps> = props => {
             </ImageBackground>
           </Column>
         </Column>
-      </Column>
-      {props.vcHasImage && (
-        <View
-          style={{
-            position: 'relative',
-            backgroundColor: Theme.Colors.DetailedViewBackground,
-          }}>
-          {props.activeTab !== 1 &&
-            (!props.walletBindingResponse &&
-            isActivationNeeded(props.verifiableCredentialData?.issuer) ? (
-              <Column
-                padding="10"
-                style={Theme.Styles.detailedViewActivationPopupContainer}>
-                <Row>
-                  <Column crossAlign="flex-start" margin={'2 0 0 10'}>
-                    {SvgImage.WalletUnActivatedLargeIcon()}
-                  </Column>
-                  <Column crossAlign="flex-start" margin={'5 18 13 8'}>
-                    <Text
-                      testID="offlineAuthDisabledHeader"
-                      style={{
-                        fontFamily: 'Inter_600SemiBold',
-                        fontSize: 14,
-                      }}
-                      color={Theme.Colors.statusLabel}
-                      margin={'0 18 0 0'}>
-                      {t('offlineAuthDisabledHeader')}
-                    </Text>
-                    <Text
-                      testID="offlineAuthDisabledMessage"
-                      style={{
-                        fontFamily: 'Inter_400Regular',
-                        fontSize: 12,
-                      }}
-                      color={Theme.Colors.statusMessage}
-                      margin={'0 18 0 0'}>
-                      {t('offlineAuthDisabledMessage')}
-                    </Text>
-                  </Column>
-                </Row>
+        {props.vcHasImage && (
+          <View
+            style={{
+              position: 'relative',
+              backgroundColor: Theme.Colors.DetailedViewBackground,
+              justifyContent: 'center', // Vertically center
+              alignItems: 'center', // Horizontally center
+              flex: 1, // Make the view take the full available space
+            }}>
+            {/* "View Certificate Online" text */}
+            <Text
+              style={{
+                fontSize: 16, // Adjust the font size as needed
+                fontWeight: 'bold', // Adjust font weight
+                marginBottom: 10, // Add space between the text and image
+                color: Theme.Colors.textColor, // You can replace with your desired color
+              }}>
+              View Certificate Online
+            </Text>
 
-                <Button
-                  testID="enableVerification"
-                  title={t('enableVerification')}
-                  onPress={props.onBinding}
-                  type="gradient"
-                  size="Large"
-                />
-              </Column>
-            ) : (
-              <Column
-                style={Theme.Styles.detailedViewActivationPopupContainer}
-                padding="10">
-                <Row>
-                  <Column crossAlign="flex-start" margin={'2 0 0 10'}>
-                    {SvgImage.WalletActivatedLargeIcon()}
-                  </Column>
-                  <Column crossAlign="flex-start" margin={'5 18 13 8'}>
-                    <Text
-                      testID="profileAuthenticated"
-                      color={Theme.Colors.statusLabel}
-                      style={{
-                        fontFamily: 'Inter_600SemiBold',
-                        fontSize: 14,
-                      }}
-                      margin={'0 18 0 0'}>
-                      {isActivationNeeded(
-                        props.verifiableCredentialData?.issuer,
-                      )
-                        ? t('profileAuthenticated')
-                        : t('credentialActivated')}
-                    </Text>
-                  </Column>
-                </Row>
-              </Column>
-            ))}
-        </View>
-      )}
+            {/* TouchableOpacity containing the image */}
+            <TouchableOpacity onPress={handleOpenWebView}>
+              <Image
+                source={viewIcon}
+                style={{
+                  width: 60,
+                  height: 60,
+                  paddingVertical: 15,
+                  paddingHorizontal: 10,
+                  resizeMode: 'contain',
+                }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </Column>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  webView: {
+    flex: 1,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: 'black',
+    borderRadius: 20,
+    padding: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+});
 
 export interface VCItemDetailsProps {
   credential: VerifiableCredential | Credential;
   verifiableCredentialData: any;
   walletBindingResponse: WalletBindingResponse;
   onBinding?: () => void;
-  activeTab?: Number;
+  activeTab?: number;
   vcHasImage: boolean;
 }
