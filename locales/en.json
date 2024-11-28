@@ -88,10 +88,9 @@
     "unPinCard": "Unpin",
     "pinCard": "Pin",
     "share": "Share",
-    "shareWithSelfie": "Vote with Face Auth",
+    "shareWithSelfie": "Auth by FingerPrint",
     "offlineAuthDisabledMessage": "Click here to enable this credentials to be used for online authentication.",
     "viewActivityLog": "View Activity Log",
-    "voteWithFingerAuth": "Vote with Finger Auth",
     "removeFromWallet": "Remove from Voters list"
   },
   "WalletBinding": {
@@ -204,7 +203,6 @@
         "three": "Polling Booth Address",
         "four": "Contact Details"
       }
-
     },
     "answers": {
       "inji": {
@@ -531,15 +529,14 @@
     "gotoSettings": "Go to settings"
   },
   "ScanScreen": {
-    "shareWithSelfie": "Vote with Face Auth",
-    "shareWithSelfieQrLogin":"QR Code Login",
+    "shareWithSelfie": "Auth by FingerPrin",
+    "shareWithSelfieQrLogin": "QR Code Login",
     "shareWithSelfieMessage": "Before Voting, we’ll securely verify your identity using face verification. By continuing, you consent to Biometric Voters Verification App using your camera for this purpose. \n\n Your facial data will only be used for verification and will not be shared with any third parties.",
-    "shareWithSelfieMessageQrLogin":"In order to access the portal, you’ll need to share your Voter ID and verify your identity securely using face verification. By continuing, you consent to Biometric Voters Verification App using your camera for this purpose. \n\n Your facial data will only be used for verification and will not be shared. After successful verification, you can choose which details to share.",
+    "shareWithSelfieMessageQrLogin": "In order to access the portal, you’ll need to share your Voter ID and verify your identity securely using face verification. By continuing, you consent to Biometric Voters Verification App using your camera for this purpose. \n\n Your facial data will only be used for verification and will not be shared. After successful verification, you can choose which details to share.",
     "ConfirmButton": "I Understand",
     "doNotAskMessage": "Don't ask me again",
     "noShareableVcs": "No shareable cards are available.",
     "sharingVc": "Sharing card",
-    "authenticateId": "Authenticate ID",
     "bluetoothStateIos": "Bluetooth is turned OFF, please turn it ON from Control center",
     "bluetoothStateAndroid": "Bluetooth is turned OFF, please turn it ON from Quick settings menu",
     "enableBluetoothMessage": "Please enable bluetooth permissions to support local sharing",
@@ -682,8 +679,6 @@
     "reasonForSharing": "Reason for sharing (optional)",
     "acceptRequest": "Share",
     "acceptRequestAndVerify": "Vote",
-    "authWithFingerPrint": "Fingerprint Auth",
-    "authWithFace": "Face Auth",
     "reject": "Reject",
     "consentToPhotoVerification": "I give consent to have my photo taken for authentication",
     "pleaseSelectAnId": "Please select an ID",
